@@ -3,7 +3,7 @@ title: "[UTCTF] Jail Break writeup"
 published: 2026-03-15
 description: utctf 롸업
 category: CTF
-tags: [CTF, Writeup, pyjail]
+tags: [CTF, writeup, pyjail, utctf]
 draft: false
 ---
 # UTCTF - Jail Break 
