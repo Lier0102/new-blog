@@ -1,0 +1,126 @@
+---
+import { Icon } from "astro-icon/components";
+import { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "@constants/constants.ts";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+---
+
+<div class="relative z-50" role="menu" tabindex="-1">
+	<button
+		aria-label="Light/Dark Mode"
+		role="menuitem"
+		class="relative btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90"
+		id="scheme-switch"
+	>
+		<div class="absolute mode-icon" data-mode={LIGHT_MODE}>
+			<Icon name="material-symbols:wb-sunny-outline-rounded" class="text-[1.25rem]" />
+		</div>
+		<div class="absolute mode-icon" data-mode={DARK_MODE}>
+			<Icon name="material-symbols:dark-mode-outline-rounded" class="text-[1.25rem]" />
+		</div>
+		<div class="absolute mode-icon" data-mode={AUTO_MODE}>
+			<Icon name="material-symbols:radio-button-partial-outline" class="text-[1.25rem]" />
+		</div>
+	</button>
+
+	<div id="light-dark-panel" class="hidden lg:block absolute transition float-panel-closed top-11 -right-2 pt-5">
+		<div class="card-base float-panel p-2">
+			<button
+				class="theme-option flex transition whitespace-nowrap items-center !justify-start w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95 mb-0.5"
+				data-mode={LIGHT_MODE}
+			>
+				<Icon name="material-symbols:wb-sunny-outline-rounded" class="text-[1.25rem] mr-3" />
+				{i18n(I18nKey.lightMode)}
+			</button>
+			<button
+				class="theme-option flex transition whitespace-nowrap items-center !justify-start w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95 mb-0.5"
+				data-mode={DARK_MODE}
+			>
+				<Icon name="material-symbols:dark-mode-outline-rounded" class="text-[1.25rem] mr-3" />
+				{i18n(I18nKey.darkMode)}
+			</button>
+			<button
+				class="theme-option flex transition whitespace-nowrap items-center !justify-start w-full btn-plain scale-animation rounded-lg h-9 px-3 font-medium active:scale-95"
+				data-mode={AUTO_MODE}
+			>
+				<Icon name="material-symbols:radio-button-partial-outline" class="text-[1.25rem] mr-3" />
+				{i18n(I18nKey.systemMode)}
+			</button>
+		</div>
+	</div>
+</div>
+
+<script is:inline define:vars={{ AUTO_MODE, DARK_MODE, LIGHT_MODE }}>
+	const modes = [LIGHT_MODE, DARK_MODE, AUTO_MODE];
+
+	const applyTheme = (theme) => {
+		if (theme === DARK_MODE) {
+			document.documentElement.classList.add("dark");
+		} else if (theme === LIGHT_MODE) {
+			document.documentElement.classList.remove("dark");
+		} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+			document.documentElement.classList.add("dark");
+		} else {
+			document.documentElement.classList.remove("dark");
+		}
+	};
+
+	const updateUi = (mode) => {
+		document.querySelectorAll(".mode-icon").forEach((icon) => {
+			icon.classList.toggle("opacity-0", icon.dataset.mode !== mode);
+		});
+		document.querySelectorAll(".theme-option").forEach((button) => {
+			button.classList.toggle("current-theme-btn", button.dataset.mode === mode);
+		});
+	};
+
+	const setMode = (mode) => {
+		localStorage.setItem("theme", mode);
+		applyTheme(mode);
+		updateUi(mode);
+	};
+
+	const getMode = () => localStorage.getItem("theme") || AUTO_MODE;
+
+	const initializeThemeSwitch = () => {
+		const switchButton = document.getElementById("scheme-switch");
+		const panel = document.getElementById("light-dark-panel");
+		if (!switchButton || !panel) return;
+
+		updateUi(getMode());
+
+		switchButton.onclick = () => {
+			const currentMode = getMode();
+			const currentIndex = modes.indexOf(currentMode);
+			const nextMode = modes[(currentIndex + 1 + modes.length) % modes.length];
+			setMode(nextMode);
+		};
+
+		switchButton.onmouseenter = () => {
+			panel.classList.remove("float-panel-closed");
+		};
+
+		panel.onmouseleave = () => {
+			panel.classList.add("float-panel-closed");
+		};
+
+		panel.querySelectorAll(".theme-option").forEach((button) => {
+			button.onclick = () => {
+				setMode(button.dataset.mode || AUTO_MODE);
+			};
+		});
+
+		window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+			if (getMode() === AUTO_MODE) {
+				applyTheme(AUTO_MODE);
+				updateUi(AUTO_MODE);
+			}
+		});
+	};
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", initializeThemeSwitch, { once: true });
+	} else {
+		initializeThemeSwitch();
+	}
+</script>
