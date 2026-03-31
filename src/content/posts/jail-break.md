@@ -50,15 +50,15 @@ while True:
 
 ### 1단계: 플래그가 어디 있나
 
-`_secret()` 함수가 `_ENC` 배열을 `_KEY(0x42)`로 XOR해서 플래그를 반환해.
-그리고 이 함수는 `GLOBALS`에 `"_secret": _secret` 으로 등록돼 있어.
-즉 jail 내부에서 `_secret()`을 호출할 수 있으면 플래그를 얻을 수 있어.
+`_secret()` 함수가 `_ENC` 배열을 `_KEY(0x42)`로 XOR
+그리고 이 함수는 `GLOBALS`에 `"_secret": _secret` 으로 등록
+즉 jail 내부에서 `_secret()`을 호출할 수 있으면 플래그
 
 ### 2단계: 왜 직접 호출이 안 되나
 
-`BANNED` 리스트에 `"secret"`이 포함돼 있어.
-필터는 **입력 문자열 전체**에 대해 `word in code.lower()`로 검사하기 때문에,
-입력 어딘가에 `secret`이라는 부분 문자열이 있으면 무조건 차단돼.
+`BANNED` 리스트에 `"secret"`이 포함
+필터는 **입력 문자열 전체**에 대해 `word in code.lower()`로 검사,
+입력 어딘가에 `secret`이라는 부분 문자열이 있으면 무조건 차단
 
 ```
 >>> _secret()          # BLOCKED - 'secret' 포함
@@ -69,9 +69,9 @@ while True:
 
 ### 3단계: 필터 우회 방법
 
-필터는 **소스 코드 문자열**을 검사하지, **런타임에 만들어지는 문자열**은 검사하지 않아.
+필터는 **소스 코드 문자열**을 검사하지, **런타임에 만들어지는 문자열**은 검사하지 않음
 
-즉 `chr()`로 문자를 조합해서 `_secret` 문자열을 **런타임에 생성**하면 우회 가능해.
+즉 `chr()`로 문자를 조합해서 `_secret` 문자열을 **런타임에 생성**하면 우회 가능
 
 ```
 '_secret' = chr(95) + 'se' + 'cret'
@@ -86,9 +86,9 @@ while True:
 
 ### 4단계: vars()로 GLOBALS 접근
 
-`SAFE_BUILTINS`에 `vars`가 허용돼 있어.
-`vars()`는 현재 실행 컨텍스트의 namespace를 dict로 반환하는데,
-`exec(code, GLOBALS)`로 실행되므로 `vars()`가 곧 `GLOBALS`야.
+`SAFE_BUILTINS`에 `vars`가 허용
+`vars()`는 현재 실행 컨텍스트의 namespace를 dict로 반환,
+`exec(code, GLOBALS)`로 실행되므로 `vars()`가 곧 `GLOBALS`
 
 ```python
 vars()['_secret']   # == GLOBALS['_secret'] == _secret 함수
@@ -107,7 +107,7 @@ print(vars()[chr(95)+'se'+'cret']())
 1. `chr(95)` → `'_'`
 2. `chr(95)+'se'+'cret'` → `'_secret'` (런타임에 조합)
 3. `vars()['_secret']` → `_secret` 함수 객체
-4. `vars()['_secret']()` → `_secret()` 호출 → 플래그 반환
+4. `vars()['_secret']()` → `_secret()` 호출 --> 플래그 반환
 5. `print(...)` → 출력
 
 ### 필터 통과 확인
@@ -148,7 +148,7 @@ utflag{py_ja1l_3sc4p3_m4st3r}
 ## 보너스: 파일을 직접 읽을 수 있었다면
 
 서버 없이 `jail.py` 소스코드에 직접 접근 가능한 경우,
-`_ENC`와 `_KEY`를 그대로 계산해도 돼.
+`_ENC`와 `_KEY`를 그대로 계산
 
 ```python
 _ENC = [0x37, 0x36, 0x24, 0x2e, 0x23, 0x25, 0x39, 0x32, 0x3b, 0x1d,
@@ -174,8 +174,6 @@ print(''.join(chr(b ^ _KEY) for b in _ENC))
 ---
 
 ## PyJail 일반적인 우회 기법 모음
-
-실제 CTF에서 자주 쓰이는 패턴들이야.
 
 ### 1. `chr()` 조합
 
