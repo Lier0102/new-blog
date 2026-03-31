@@ -2,7 +2,7 @@
 title: "[Codegate Junior Quals] 후기"
 published: 2026-03-29
 description: codegate2026 junior 예선
-categorㅛ: CTF
+category: CTF
 tags: [CTF, writeup, codegate2026]
 draft: false
 ---
