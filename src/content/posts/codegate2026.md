@@ -1,5 +1,5 @@
 ---
-title: "[Codegate Junior Quals] 후기"
+title: "[Codegate Junior Preliminary Quals] 후기"
 published: 2026-03-29
 description: codegate2026 junior 예선
 category: CTF

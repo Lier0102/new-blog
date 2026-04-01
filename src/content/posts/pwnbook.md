@@ -1,5 +1,5 @@
 ---
-title: "[Codegate Junior Quals] pwnbook writeup"
+title: "[Codegate Junior Preliminary Quals] pwnbook writeup"
 published: 2026-04-01
 category: CTF
 tags: [CTF, writeup, codegate2026]

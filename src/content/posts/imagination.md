@@ -1,5 +1,5 @@
 ---
-title: "[Codegate Junior Quals] imagination writeup"
+title: "[Codegate Junior Preliminary Quals] imagination writeup"
 published: 2026-03-31
 category: CTF
 tags: [CTF, writeup, codegate2026]
