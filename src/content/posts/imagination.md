@@ -1,6 +1,7 @@
 ---
 title: "[Codegate Junior Preliminary Quals] imagination writeup"
 published: 2026-03-31
+description: 코게 주니어 예선
 category: CTF
 tags: [CTF, writeup, codegate2026]
 draft: false

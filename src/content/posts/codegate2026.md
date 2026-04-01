@@ -1,13 +1,13 @@
 ---
 title: "[Codegate Junior Preliminary Quals] 후기"
 published: 2026-03-29
-description: codegate2026 junior 예선
+description: codegate2026 jr 예선
 category: CTF
 tags: [CTF, writeup, codegate2026]
 draft: false
 ---
 
-# Codegate 2026 Jr 후기
+# 코게 예선 후기
 
 ...  
 솔직히 내가 잘하는 편도 아니고, 공부를 많이 한 것도 아니지만  

@@ -2,6 +2,7 @@
 title: "[Codegate Junior Preliminary Quals] pwnbook writeup"
 published: 2026-04-01
 category: CTF
+description: 코게 주니어 예선
 tags: [CTF, writeup, codegate2026]
 draft: false
 ---
