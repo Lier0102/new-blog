@@ -1,7 +1,7 @@
 # About
 BANKAI
 
-Template: [Fuwari](https://github.com/saicaca/fuwari)   
+- Codegate Junior Preliminary Quals 26th - BANKAI(2026)
 
 Living in New Eridu
 
