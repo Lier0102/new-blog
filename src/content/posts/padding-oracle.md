@@ -1,5 +1,5 @@
 ---
-title: "[]"
+title: "[DREAMHACK] Padding Oracle"
 published: 2026-04-04
 description: 드림핵 문제풀기
 category: dreamhack
