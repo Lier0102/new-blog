@@ -1,5 +1,5 @@
 ---
-title: "[Codegate Junior Preliminary Quals] pwnbook writeup"
+title: "[Codegate Junior Preliminary Quals] phonebook writeup"
 published: 2026-04-01
 category: CTF
 description: 코게 주니어 예선
@@ -7,7 +7,7 @@ tags: [CTF, writeup, codegate2026]
 draft: false
 ---
 
-# PWNBOOK
+# phonebook
 포너블 문제 중 가장 시작하기 재밌었던 문제다.
 익숙한 메뉴, 익숙한 구조체 느낌, 푸는 내내 즐거웠다.
 
