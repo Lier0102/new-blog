@@ -1,6 +1,6 @@
 ---
 title: "[Codegate Junior Preliminary Quals] CobWeb writeup"
-published: 2026-04-23
+published: 2026-04-24
 category: CTF
 description: 코게 주니어 예선
 tags: [CTF, writeup, codegate2026]
