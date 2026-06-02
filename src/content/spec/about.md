@@ -1,6 +1,8 @@
 # About
 BANKAI
 
+- Hackअस्त्र 2026::CTF 10th Quals - Nicaea, Qualifier
+- DEF CON Quals 104th - MIT
 - Incognito 7.0 Quals 22nd - BANKAI
 - Codegate Junior Preliminary Quals 26th - BANKAI(2026)
 - 2021.11.12 ~ 2021.11.21 KAIST SW CAMP 초등
