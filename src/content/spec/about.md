@@ -1,7 +1,7 @@
 # About
 BANKAI
 
-- Hackअस्त्र 2026::CTF 10th Quals - Nicaea, Qualifier
+- Hackअस्त्र 2026::CTF 10th - Team Nicaea, Qualifier
 - DEF CON Quals 104th - MIT
 - Incognito 7.0 Quals 22nd - BANKAI
 - Codegate Junior Preliminary Quals 26th - BANKAI(2026)
