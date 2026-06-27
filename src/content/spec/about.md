@@ -3,7 +3,8 @@ BANKAI
 
 - 대구·경북 사이버공격 방어대회 2026 본선 4위 - bankai
 - 대구·경북 사이버공격 방어대회 2026 예선전 1위 - bankai
-- Hackअस्त्र 2026::CTF 10th - Team Nicaea, Qualifier
+- Sieberrsec CTF 7.0 5th - Team N1caea
+- Hackअस्त्र 2026::CTF 10th - Team N1caea, Qualifier
 - DEF CON Quals 104th - MIT
 - Incognito 7.0 Quals 22nd - BANKAI
 - Codegate Junior Preliminary Quals 26th - BANKAI(2026)
