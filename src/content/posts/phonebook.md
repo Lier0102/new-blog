@@ -2,17 +2,17 @@
 title: "[Codegate Junior Preliminary Quals] phonebook writeup"
 published: 2026-04-01
 category: CTF
-description: 코게 주니어 예선
+description: Codegate Junior Preliminary
 tags: [CTF, writeup, codegate2026]
 draft: false
 ---
 
 # phonebook
-포너블 문제 중 가장 시작하기 재밌었던 문제다.
-익숙한 메뉴, 익숙한 구조체 느낌, 푸는 내내 즐거웠다.
+Of all the pwn problems, this was the most fun to start with.
+Familiar menus, familiar structure feel, it was fun the whole time.
 
 ---
-## 정적 분석
+## Static analysis
 
 ### `main()`
 ```c
@@ -21,8 +21,8 @@ int init(EVP_PKEY_CTX *ctx)
 {
   int iVar1;
   
-  memset(ctx,0,0x300); // 768(10진수)
-  setvbuf(stdin,(char *)0x0,2,0); // ctf용 버퍼설정ㅋ
+  memset(ctx,0,0x300); // 768(10launching)
+  setvbuf(stdin,(char *)0x0,2,0); // ctfBuffer settings
   setvbuf(stdout,(char *)0x0,2,0);
   iVar1 = setvbuf(stderr,(char *)0x0,2,0);
   return iVar1;
@@ -36,7 +36,7 @@ int main(void)
   EVP_PKEY_CTX local_318 [776];
   long local_10;
   
-  local_10 = *(long *)(in_FS_OFFSET + 0x28); // 카나리 넣는 부분이라 해석 ㄴ
+  local_10 = *(long *)(in_FS_OFFSET + 0x28); // I interpret it as the part where the canary is inserted.
   init(local_318);
   do {
     puts("\n=== phonebook ===");
@@ -59,7 +59,7 @@ int main(void)
     if (iVar1 == 4) {
       delete(local_318);
     }
-  } while (iVar1 != 5);
+  } while (iVar1!= 5);
   if (local_10 == *(long *)(in_FS_OFFSET + 0x28)) {
     return 0;
   }
@@ -70,18 +70,18 @@ int main(void)
 
 ---
 ### `EVP_PKEY_CTX`?
-가장 먼저 의문이 된 건 도대체 이 구조체가 뭔가? 였다.
-코드가 C언어 기반이라 검색해보니,  
+The first question that came to mind was what on earth is this structure? It was.
+I searched and found that the code is based on C language.
 
-> OpenSSL 라이브러리에서, 공개키 암호화 알고리즘(Public Key Algorithm)의 동작을 제어하고 구성하기 위한 "컨텍스트(Context, 상태/정보)" 구조체
+> In the OpenSSL library, “Context (Status/Information)” structure to control and configure the operation of the public key algorithm (Public Key Algorithm)
 
-라고 말하긴 한다...?
+They say that...
 
-`do while`문에서 돌아가는 내용은 걍
+The contents of the `do while` statement are just
 
-메뉴 보여주고, 입력 받고, 케이스로 돌리고, 이게 끝이다.  
+Show the menu, receive input, return to the case, and that is it.
 
-각 함수를 분석해보겠.
+Let’s analyze each function.
 
 ---
 ### `read_int()`
@@ -96,15 +96,15 @@ void read_int(void)
   local_10 = *(long *)(in_FS_OFFSET + 0x28);
   read_line(local_28,0x10);
   atoi(local_28);
-  if (local_10 != *(long *)(in_FS_OFFSET + 0x28)) {
+  if (local_10!= *(long *)(in_FS_OFFSET + 0x28)) {
                     /* WARNING: Subroutine does not return */
     __stack_chk_fail();
   }
   return;
 }
 ```
-내부적으로 `read_line()`을 호출한다.
-`0x10`만큼만 이렇게 읽어온 뒤 정수로 변형, 이게 끝이다.
+Internally calls `read_line()`.
+After reading as much as `0x10` like this, convert it to an integer, and that is it.
 
 ---
 ### `read_line()`
@@ -121,8 +121,8 @@ void read_line(char *param_1,int param_2)
 }
 ```
 
-여기선 또 `read()`를 내부적으로 호출하여 지정된 크기만큼 읽는다.  
-개행문자가 나오는 지점을 널 바이트로 종결시킨다
+Here, `read()` is also called internally to read the specified size.
+Terminate the point where a newline character appears with a null byte.
 
 ---
 ### `create()`
@@ -134,7 +134,7 @@ void create(long param_1)
   printf("index: ");
   iVar1 = read_int();
   printf("firstName: ");
-  read_line(param_1 + (long)iVar1 * 0x60 + 0x40,0x20); // 구조체 느낌
+  read_line(param_1 + (long)iVar1 * 0x60 + 0x40,0x20); // structure-like layout
   printf("lastName: ");
   read_line(param_1 + (long)iVar1 * 0x60 + 0x20,0x20);
   printf("phoneNumber: ");
@@ -142,16 +142,16 @@ void create(long param_1)
   return;
 }
 ```
-여기선 임의의 구조체 변수 인덱스에 넣을 값을 적는다.
-구조체 크기는 `0x60`,  
+Here, write the value to be inserted into the random structure variable index.
+The structure size is `0x60`,
 
-첫 번째 멤버는 `phoneNumber`,
-두 번째 멤버는 `lastName`,
-마지막 멤버가 `firstName`이다.
-각각 `0x20`만큼의 크기를 가지고 있다.
+The first member is `phoneNumber`,
+The second member is `lastName`,
+The last member is `firstName`.
+Each has a size of `0x20`.
 
-근데 `i`에 대한 제한이 대놓고 없음ㅋㅋㅋㅋㅋㅋㅋ
-**OOB** 가능할듯
+But there is no restriction on `i` lol.
+**OOB** It seems possible.
 
 ---
 ### `edit()`
@@ -173,7 +173,7 @@ void edit(long param_1)
 }
 ```
 
-`edit`또 딱히 `create`와 다른 점은 없, 그래서 취약점도 똑같이 존재함 ㅋㅋㅋㅋㅋㅋㅋㅋㅋ
+`edit` is structurally similar to `create`, so it exposes the same vulnerability.
 
 ---
 ### `list()`
@@ -183,7 +183,7 @@ void list(long param_1)
   uint local_c;
   
   for (local_c = 0; (int)local_c < 8; local_c = local_c + 1) {
-    if (*(char *)(param_1 + (long)(int)local_c * 0x60 + 0x40) != '\0') {
+    if (*(char *)(param_1 + (long)(int)local_c * 0x60 + 0x40)!= '\0') {
       printf("[%d] %s %s / %s\n",(ulong)local_c,param_1 + (long)(int)local_c * 0x60 + 0x40,
              param_1 + (long)(int)local_c * 0x60 + 0x20,param_1 + (long)(int)local_c * 0x60);
     }
@@ -192,8 +192,8 @@ void list(long param_1)
 }
 ```
 
-각 구조체 변수 index를 돌면서 `firstName`이 비어있지 않은 경우에 해당 변수의 값을 전부 출력한다.
-`%s` << 얘가 좀 심상치 않다, 널 종결 검사를 하지 않고 출력하기 때문에 **임의 읽기**에 활용할 수 있음.
+It goes through each structure variable index and, if `firstName` is not empty, all values ​​of the variable are output.
+`%s` << This is a bit unusual. It can be used for **random reading** because it is output without performing a null termination check.
 
 ---
 ### `delete()`
@@ -210,11 +210,11 @@ void delete(long param_1)
 }
 ```
 
-원하는 인덱스에 있는 값을 지운다.
+Delete the value at the desired index.
 
 ---
-## 정적 분석--2
-코드는 대충 봤으니 어셈을 보면서 스택 어디에 저장되는지 메모해 보도록 하자.
+## Static Analysis--2
+Since we have only glanced at the code, let's take a look at the assembly and take note of where it is stored on the stack.
 
 ```asm
 0010165f f3 0f 1e fa     ENDBR64
@@ -230,48 +230,48 @@ void delete(long param_1)
 0010167d 48 8d 85        LEA        RAX=>local_318,[RBP + -0x310]
 f0 fc ff ff
 ```
-시작 오프셋은 `RBP-0x310`이다.
+The starting offset is `RBP-0x310`.
 
-그럼 **OOB**로 어디까지 읽을 수 있나 보자,
-아까 `list()`에서 봤듯 7까지가 최대니까  
-8부터 시작하면
+So let’s see how far we can read with **OOB**,
+As we saw earlier in `list()`, 7 is the maximum.
+If you start from 8
 
-`구조체8 = ($rbp - 0x310) + 8 * 0x60 = ($rbp - 0x10)`
-시작 지점이 ($rbp-0x10)이므로 첫 번째 멤버인
+`struct8 = ($rbp - 0x310) + 8 * 0x60 = ($rbp - 0x10)`
+Since the starting point is ($rbp-0x10), the first member
 
-- `phoneNumber`는 `($rbp-0x10) ~ ($rbp+0x0f)`
-- `lastName`은 `($rbp+0x10) ~ ($rbp+0x2f)`
-- `firstName`은 `($rbp+0x30) ~ ($rbp+0x3f)`
+- `phoneNumber` is `($rbp-0x10) ~ ($rbp+0x0f)`
+- `lastName` is `($rbp+0x10) ~ ($rbp+0x2f)`
+- `firstName` is `($rbp+0x30) ~ ($rbp+0x3f)`
 
-**따라서!!!!**
-- `$rbp-0x8`에 `canary`가 위치해있다.
-- `$rbp+0x8`에 `saved return address`가 위치해있다.
-즉, 구조체 8번째 거에서 카나리/RET을 모두 leak할 수 있고, `saved rbp`도 leak 가능하다.
-게다가 쓰는 것도
-`$rbp+0x3f`까지 가능하므로 개꿀ㄲㄹㄲㄹㄲㄹ임ㅋ
+**thus!**
+- `canary` is located in `$rbp-0x8`.
+- `saved return address` is located in `$rbp+0x8`.
+In other words, both Canary/RET can be leaked in the 8th structure, and `saved rbp` can also be leaked.
+Besides, writing
+it is possible up to `$rbp+0x3f`, so it is a breeze.
 
 ---
 ## EXPLOIT!!!
 
-계획은 다 짰다. 일단 카나리부터 까보자.
+The plan has been made. Let's start with Canary.
 
-읽을 수 있는 건 **7번째 idx까지**, 그러나 우린 **개행문자를 포함시키지 않고 0x20의 크기를 채운다**
+We can read **until the 7th idx**, but we **fill the size of 0x20 without including the newline**
 
 <a href="https://ibb.co/20w2ZTqc"><img src="https://i.ibb.co/20w2ZTqc/Screenshot-2026-04-01-at-12-04-42-PM.png" alt="Screenshot-2026-04-01-at-12-04-42-PM" border="0"></a>
 
-그럼 읽을 때 7의 뒤 8(canary/sfp/ret)번째 구조체까지 leak이 가능하다!!  
+Then, when reading, it is possible to leak up to the 8th (canary/sfp/ret) structure after 7!
 
-지금은 카나리를 찾는 중이니 8번 만들면서 b'A'를 9개만 넣는다.(phoneNumber에)
-그럼 카나리가 출력될 거고, 그걸 뽑으면 되는데
-좀 뽑기가 힘들었다. 그래봤자 포맷 잡는 거긴 한데..
+Since we are currently looking for Canary, we make it 8 times and only add 9 b'A's (in phoneNumber).
+Then a canary will be printed, and you just have to pull it out.
+It was a bit difficult to pull off. Well, it is just a matter of formatting it...
 
-카나리는 최하위 1바이트가 널 이므로 이 녀석도 덮어줘야함.
-그렇게 `main`의 **SFP**를 뽑을 거다!!!
+In Canary, the lowest 1 byte is null, so this must also be covered.
+that is how I'll pick `main`'s **SFP**!
 
-근데 딱히 쓸모가 없음.  
-걍 이따 ret addr 덮을 수도 있는데 굳이..?
+But it is not really useful.
+I could just cover ret addr later, but why...
 
-그래서 **`main`의 `saved ret addr`** 을 뽑아주겠다~~
+So, I will pick `saved ret addr`** of **`main`~~
 
 ---
 
@@ -398,5 +398,5 @@ if __name__ == "__main__":
     p.interactive()
 ```
 
-롸업 쓸 당시에 서버 닫혀있어서 로컬에서 도커 띄운 뒤 다시 롸업을 작성했다.
-스켈레톤 코드가 영 맛에 들지 않아서 믿음직한 동료에게 포맷을 다시 맞춰주는 쪽으로 도움을 받았다.
+At the time of writing the review, the server was closed, so I launched Docker locally and wrote the review again.
+I was not really satisfied with the skeleton code, so I had a trustworthy colleague help me reformat it.

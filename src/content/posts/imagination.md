@@ -1,7 +1,7 @@
 ---
 title: "[Codegate Junior Preliminary Quals] imagination writeup"
 published: 2026-03-31
-description: 코게 주니어 예선
+description: Codegate Junior Preliminary
 category: CTF
 tags: [CTF, writeup, codegate2026]
 draft: false
@@ -11,30 +11,30 @@ draft: false
 
 > Run the program in your imagination, like the imaginary animal unicorn!
 
-## 문제 개요
-- **카테고리**: Rev
-- **주제**: VM
+## Problem Overview
+- **Category**: Rev
+- **Topic**: VM
 
 <!--more-->
 ---
 
 VM. Virtual Machine.  
-나는 이 주제가 얼마나 고통스러운지 아주 잘 알고 있다.  
-공부할 때 만난다면 더없이 즐겁지만, **CTF에서 만난다면** 이야기가 달라진다.  
+I know very well how painful this topic is.
+It would be a lot of fun if we met while studying, but **if we met at CTF** it would be a different story.
 
-다행히, 이번 VM문제는 엄청 어렵진 않았다..  
+Fortunately, this VM problem was not very difficult.
 
-**!! 미리 함수/변수명을 리네임 한 상태에서 설명을 할 예정이다.**  
-개인적으로 리네임은 함수명 리네임이 제일 재밌는 것 같다.  
+**! The explanation will be given with the function/variable names renamed in advance.**
+Personally, I infer renaming function names is the most fun.
 
-그게 제일 쉬우니까.  
+Because that is the easiest.
 
 ---
-## 정적 분석
+## Static analysis
 
 ```bash
 prob: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV),  
-dynamically linked, ..., stripped
+dynamically linked,..., stripped
 ```
 
 ```bash
@@ -47,31 +47,31 @@ dynamically linked, ..., stripped
     IBT:        Enabled
 ```
 
-근데 보호기법이 그렇게 중요하진 않았다.  
+But protection techniques were not that important.
 
 ---
 ### `main()`
-걍 얘 하나만 있긴 한데 일단 형식상 달았다.  
+there is only one, but it is just for formality.
 
-가장 먼저 최대 127글자를 입력받는다.  
-그리고 길이를 저장한다.
+First, up to 127 characters are input.
+And save the length.
 ```c
   __printf_chk(2,"Input : ");
   __isoc99_scanf("%127s",local_128);
   sVar2 = strlen(local_128);
 ```
-길이는 
+The length is
 ```c
-  if (sVar2 != 0x4e) {
+  if (sVar2!= 0x4e) {
     __printf_chk(2,"Incorrect input length");
                     /* WARNING: Subroutine does not return */
     exit(1);
   }
 ```
-`0x4e`, 10진수로 `78`이여야 한다.  
+It must be `0x4e`, `78` in decimal.
 
-문제에서 제공한 `code.bin`을 읽기로 열어서  
-그 파일의 크기를 저장, 해당 크기 + 1만큼
+Open `code.bin` provided in the problem for reading.
+Save the size of that file, that size + 1
 ```c
   __stream = fopen("./code.bin","r");
   if (__stream == (FILE *)0x0) {
@@ -84,10 +84,10 @@ dynamically linked, ..., stripped
   g_code_buf = malloc(sVar2 + 1);
 ```
 
-`g_code_buf`에 메모리를 할당해준다.  
-(예외 처리 코드는 여기서 생략)  
+Allocate memory to `g_code_buf`.
+(Exception handling code is omitted here)
 
-이제 코드를 읽어야겠지!?!?!?!?!?!?  
+Now I have to read the code...
 
 ```c
   fseek(__stream,0,0);
@@ -95,75 +95,74 @@ dynamically linked, ..., stripped
   fclose(__stream);
 ```
 
-그래서 읽었습니다.  
+So I read it.
 
-**그런데...**  
+**however...**
 
-갑자기 듣도보도 못한  
+suddenly unheard of
 ```c
 iVar1 = uc_open(3,0x40000004,&local_130);
 ```
-`uc_open()`을 만났다.  
-내 직감이 저 3, 4는 매크로 값이 아닐까 라고 말했다.  
+I met `uc_open()`.
+My intuition told me that those 3 and 4 might be macro values.
 
-얘가 `ELF`인데 상수 0x40...은 좀 말이 안되는 것 같아서ㅇㅇ  
+This is `ELF`, but the constant 0x40... does not seem to make sense.
 
-찾아본 결과  
+Search results
 ```c
 uc_open(UC_ARCH_MIPS=3, UC_MODE_MIPS32|UC_MODE_BIG_ENDIAN=0x40000004, &uc)
 ```
 
-매크로의 값은 이렇다는 걸 알 수 있었다.  
-저번 ctf에서도 `MIPS` 바이너리를 봤던 것 같은데..  
+I found out that the value of the macro was like this.
+I saw the `MIPS` binary in the last ctf too...
 
 ---
-#### 분기
+#### branch
 ```c
-if (iVar1 == 0) {
-  ...
+if (iVar1 == 0) {...
 } else {
     uVar4 = uc_strerror(iVar1);
     pcVar5 = "uc_open() failed: %s\n";
 }
 ```
 
-그 다음 부분은 이렇게 생겼다.  
+The next part looks like this.
 
-`uc_open()`은 cpu 에뮬레이터 하나 만들어 건내주는 함수라고 보면 된다.  
-솔직히 이거 처음봐서 꽤 놀랐음.  
+`uc_open()` can be considered a function that creates and delivers a CPU emulator.
+I was quite surprised when I saw this for the first time.
 
-이번 ctf에서 얻는 게 많아서 나름 좋은 것 같다.  
-성적은 좋지 않지만..  
-**if문 내부**에는 다음과 같은 코드가 있다.  
+It appears is good because I get a lot from this CTF.
+My grades are not good, but...
+**Inside the if statement** there is the following code.
 
 ```c
-    // 입력/출력 영역 지정(입력/결과를 여기서 읽게 설정)
+    // input/Specify output area(input/Read results here)
     // UC_PROT_READ|WRITE=3
     iVar1 = uc_mem_map(local_130,0x1000000,0x1000,3);
     if (iVar1 == 0) {
-      // 코드실행영역 설정(RWX) << code.bin이 로드될 곳임
+      // Code execution area settings(RWX) << code.binThis is where it will be loaded
       //  UC_PROT_ALL=7
       iVar1 = uc_mem_map(local_130,0x1001000,0x1000,7);
       if (iVar1 == 0) {
          sVar3 = strlen(local_128);
      
-         // 0x4e 바이트(내..그러니까 사용자 입력)를 여기에 저장
+         // Store 0x4e bytes of user input here.
          iVar1 = uc_mem_write(local_130,0x1000000,local_128,sVar3 + 1);
          if (iVar1 == 0) {
-          // 아까 할당한 코드 영역에 적기
+          // Write it down in the code area you assigned earlier.
            iVar1 = uc_mem_write(local_130,0x1001000,g_code_buf,sVar2);
            if (iVar1 == 0) {
             /* 
             uc_emu_start(uc, begin=0x1001000, until=code_size+0x1000ffb, timeout=0, count=100000)
             */
-            // 0x1001000부터 코드끝까지 실행, 제한시간 없음, 명령은 최대 100,000회 실행
+            // 0x1001000Run from start to end of code, No time limit, command is up to 100,000run twice
              iVar1 = uc_emu_start(local_130,0x1001000,sVar2 + 0x1000ffb,0,100000);
              if (iVar1 == 0) {
-                // 정적분석으로는 저 실행코드 중 사용자의 입려과 관련된 처리가 일어날 수 있다는 점을 유추 가능함 ㅇㅇ
-                // 실행 후 사용자 입력값이 담겨있던 곳 읽기
+                // Through static analysis, it can be inferred that processing related to user input may occur among the executable code.
+                // Read the region containing the user input after execution.
                 iVar1 = uc_mem_read(local_130,0x1000000,local_a8,0x80);
                 if (iVar1 == 0) {
-                  // 위 읽은 값과 DAT_001020e0의 값이 일치하면 성공, 아마 이 값이 플래그일 것으로 예상.
+                  // The values ​​read above and DAT_001020e0Success if the values ​​match, This value is probably a flag..
                   iVar1 = memcmp(local_a8,&DAT_001020e0,0x4e);
                   if (iVar1 == 0) {
                     puts("Correct!");
@@ -198,102 +197,102 @@ if (iVar1 == 0) {
   }
 ```
 
-해당하는 곳의 값은  
+The corresponding value is
 ```hex
                              DAT_001020e0                                    XREF[1]:     main:00101540(*)  
-        001020e0 63              ??         63h    c
-        001020e1 0b              ??         0Bh
-        001020e2 0c              ??         0Ch
-        001020e3 02              ??         02h
-        001020e4 19              ??         19h
-        001020e5 11              ??         11h
-        001020e6 1e              ??         1Eh
-        001020e7 1a              ??         1Ah
-        001020e8 68              ??         68h    h
-        001020e9 1b              ??         1Bh
-        001020ea 33              ??         33h    3
-        001020eb 0b              ??         0Bh
-        001020ec 5a              ??         5Ah    Z
-        001020ed 1e              ??         1Eh
-        001020ee 2e              ??         2Eh    .
-        001020ef 71              ??         71h    q
-        001020f0 ac              ??         ACh
-        001020f1 13              ??         13h
-        001020f2 48              ??         48h    H
-        001020f3 43              ??         43h    C
-        001020f4 0f              ??         0Fh
-        001020f5 6f              ??         6Fh    o
-        001020f6 e6              ??         E6h
-        001020f7 52              ??         52h    R
-        001020f8 ac              ??         ACh
-        001020f9 69              ??         69h    i
-        001020fa 4f              ??         4Fh    O
-        001020fb 2a              ??         2Ah    *
-        001020fc 6b              ??         6Bh    k
-        001020fd 29              ??         29h    )
-        001020fe 43              ??         43h    C
-        001020ff 29              ??         29h    )
-        00102100 31              ??         31h    1
-        00102101 29              ??         29h    )
-        00102102 70              ??         70h    p
-        00102103 e1              ??         E1h
-        00102104 a9              ??         A9h
-        00102105 0e              ??         0Eh
-        00102106 a0              ??         A0h
-        00102107 52              ??         52h    R
-        00102108 26              ??         26h    &
-        00102109 69              ??         69h    i
-        0010210a fc              ??         FCh
-        0010210b d9              ??         D9h
-        0010210c 8e              ??         8Eh
-        0010210d 3e              ??         3Eh    >
-        0010210e 4c              ??         4Ch    L
-        0010210f 0c              ??         0Ch
-        00102110 15              ??         15h
-        00102111 b3              ??         B3h
-        00102112 2b              ??         2Bh    +
-        00102113 24              ??         24h    $
-        00102114 93              ??         93h
-        00102115 16              ??         16h
-        00102116 6d              ??         6Dh    m
-        00102117 9a              ??         9Ah
-        00102118 dd              ??         DDh
-        00102119 c5              ??         C5h
-        0010211a 7a              ??         7Ah    z
-        0010211b 22              ??         22h    "
-        0010211c 41              ??         41h    A
-        0010211d 5b              ??         5Bh    [
-        0010211e d9              ??         D9h
-        0010211f 19              ??         19h
-        00102120 30              ??         30h    0
-        00102121 5f              ??         5Fh    _
-        00102122 4e              ??         4Eh    N
-        00102123 f3              ??         F3h
-        00102124 ad              ??         ADh
-        00102125 09              ??         09h
-        00102126 19              ??         19h
-        00102127 3f              ??         3Fh    ?
-        00102128 e7              ??         E7h
-        00102129 da              ??         DAh
-        0010212a cb              ??         CBh
-        0010212b f4              ??         F4h
-        0010212c fd              ??         FDh
-        0010212d 96              ??         96h
-        0010212e 00              ??         00h
+        001020e0 63??         63h    c
+        001020e1 0b??         0Bh
+        001020e2 0c??         0Ch
+        001020e3 02??         02h
+        001020e4 19??         19h
+        001020e5 11??         11h
+        001020e6 1e??         1Eh
+        001020e7 1a??         1Ah
+        001020e8 68??         68h    h
+        001020e9 1b??         1Bh
+        001020ea 33??         33h    3
+        001020eb 0b??         0Bh
+        001020ec 5a??         5Ah    Z
+        001020ed 1e??         1Eh
+        001020ee 2e??         2Eh.
+        001020ef 71??         71h    q
+        001020f0 ac??         ACh
+        001020f1 13??         13h
+        001020f2 48??         48h    H
+        001020f3 43??         43h    C
+        001020f4 0f??         0Fh
+        001020f5 6f??         6Fh    o
+        001020f6 e6??         E6h
+        001020f7 52??         52h    R
+        001020f8 ac??         ACh
+        001020f9 69??         69h    i
+        001020fa 4f??         4Fh    O
+        001020fb 2a??         2Ah    *
+        001020fc 6b??         6Bh    k
+        001020fd 29??         29h    )
+        001020fe 43??         43h    C
+        001020ff 29??         29h    )
+        00102100 31??         31h    1
+        00102101 29??         29h    )
+        00102102 70??         70h    p
+        00102103 e1??         E1h
+        00102104 a9??         A9h
+        00102105 0e??         0Eh
+        00102106 a0??         A0h
+        00102107 52??         52h    R
+        00102108 26??         26h    &
+        00102109 69??         69h    i
+        0010210a fc??         FCh
+        0010210b d9??         D9h
+        0010210c 8e??         8Eh
+        0010210d 3e??         3Eh    >
+        0010210e 4c??         4Ch    L
+        0010210f 0c??         0Ch
+        00102110 15??         15h
+        00102111 b3??         B3h
+        00102112 2b??         2Bh    +
+        00102113 24??         24h    $
+        00102114 93??         93h
+        00102115 16??         16h
+        00102116 6d??         6Dh    m
+        00102117 9a??         9Ah
+        00102118 dd??         DDh
+        00102119 c5??         C5h
+        0010211a 7a??         7Ah    z
+        0010211b 22??         22h    "
+        0010211c 41??         41h    A
+        0010211d 5b??         5Bh    [
+        0010211e d9??         D9h
+        0010211f 19??         19h
+        00102120 30??         30h    0
+        00102121 5f??         5Fh    _
+        00102122 4e??         4Eh    N
+        00102123 f3??         F3h
+        00102124 ad??         ADh
+        00102125 09??         09h
+        00102126 19??         19h
+        00102127 3f??         3Fh?
+        00102128 e7??         E7h
+        00102129 da??         DAh
+        0010212a cb??         CBh
+        0010212b f4??         F4h
+        0010212c fd??         FDh
+        0010212d 96??         96h
+        0010212e 00??         00h
 ```
 
 
-이렇게 생겼다.  
+It looks like this.
 
 ---
 
-#### `code.bin` << 결국엔 얘가 뭐냐??  
+#### `code.bin` << In the end, what is this?
 
-아까 에뮬할 cpu 아키텍쳐가 mips였으니까  
-얘도 mips로 작성된 녀석이니 하면 된다 ㅇㅇ  
+Because the CPU architecture to be emulated earlier was mips.
+This one is also written in mips, so you can do it.
 
-32비트, mips, 빅엔디안이라는 점을 이용해 코드를 읽어  
-분석하면:  
+Read the code using 32-bit, mips, and big-endian
+Analyzing:
 
 ```hex
 code.bin size: 0x70
@@ -327,7 +326,7 @@ code.bin size: 0x70
   0x6c: 0x00000000
 ```
 
-이렇게 끊을 수 있다.  
+You can break it like this.
 
 ```py
 import struct
@@ -336,12 +335,12 @@ for i in range(0, len(code), 4):
     print(f'  {i:#04x}: {w:#010x}')
 ```
 
-4바이트씩 끊어 읽은 코드는 위와 같고  
+The code for reading 4 bytes at a time is as above.
 
-mips 읽어본 적도 없고 제대로 찾아보지도 않았다.  
-시급한 상황이라 재빨리 위 내용을 넘겼고  
+mips I have never read it, and I have not even looked it up properly.
+Since it was an urgent situation, I quickly passed on the above information.
 
-아래와 같은 어셈블리를 얻었다.
+I got the following assembly:
 ```mips
 0x00:  3c190100    lui     $t9, 0x100
 0x04:  24080000    li      $t0, 0
@@ -397,9 +396,9 @@ for (i = 0; i < 0x4e; i++) {
 }
 ```
 
-이런 느낌이다.  
+It feels like this.
 
-위를 파이썬으로 구현하고 복호화가 필요하니 그 부분도 같이 구현하겠다.  
+Since the above is implemented in Python and decryption is required, we will implement that part as well.
 
 ```py
 def enc(data):
@@ -407,7 +406,7 @@ def enc(data):
   n = len(buf)
 
   # 0~n-2
-  for i in range(n-1): # 안쪽에서 i+1까지 접근 하므로 n-1ㅇㅇ;;
+  for i in range(n-1): # from the inside i+1Because it approaches n-1;;
     for j in range(i + 1, n):
       buf[j] = (buf[j] ^ (buf[i] + j)) & 0xff
   return buf
@@ -426,9 +425,9 @@ def dec(data):
 ```
 ---
 
-이게 그나마 쉬운 문제였다.  
-내가 이거 풀고 코드게이트 디코에 no more mips gif 보냈던 걸로 기억한다.  
+This was the easiest problem.
+I remember I solved this and sent the no more mips gif to Codegate Dico.
 
-gif에 반응이 없어 좀 슬펐다.  
+I was a little sad that there was no reaction to the gif.
 
-(대충 칸예웨스트 많이 배워갑니다 짤)
+(I am learning a lot from Kanye West)

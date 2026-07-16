@@ -1,7 +1,7 @@
 ---
 title: "[UTCTF] Hidden in Plain Sight writeup"
 published: 2026-03-15
-description: utctf 롸업
+description: An analysis of the UTCTF Hidden in Plain Sight challenge.
 category: CTF
 tags: [CTF, writeup, utctf]
 draft: false
@@ -11,15 +11,15 @@ draft: false
 
 curl https://utctf.live/api/v1/challenges -H "Cookie: session=c8c700e4-703a-41ff-b4a6-30004e5b17cb.i2tFc7K_Q1YbOjfcNc9WnkNXg6k"
 
-걍 문제 목록 조회하니까 
+I just looked up the list of problems.
 
-이렇게 뜸.  
+Like this.
 
-다른 건 없고 혼자 아무 생각 없이 주소 보내다가 발견함.
+With nothing else in mind, I was just mindlessly sending out addresses and found this.
 <!--more-->
 
 ```
-curl https://utctf.live/api/v1/challenges -H "Cookie: session=<숨김>"
+curl https://utctf.live/api/v1/challenges -H "Cookie: session=<hiding>"
 {"success": true, "data": [{"id": 1, "type": "dynamic", "name": "Fortune Teller", "value": 100, "solves": 306, "solved_by_me": true, "category": "Cryptography", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},   
 {"id": 11, "type": "dynamic", "name": "Breadcrumbs", "value": 100, "solves": 343, "solved_by_me": true, "category": "Misc", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
 {"id": 14, "type": "dynamic", "name": "Jail Break", "value": 100, "solves": 315, "solved_by_me": true, "category": "Misc", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
@@ -33,7 +33,7 @@ curl https://utctf.live/api/v1/challenges -H "Cookie: session=<숨김>"
 {"id": 7, "type": "dynamic", "name": "Last Byte Standing", "value": 584, "solves": 205, "solved_by_me": true, "category": "Forensics", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
 {"id": 2, "type": "dynamic", "name": "Oblivious Error", "value": 632, "solves": 193, "solved_by_me": true, "category": "Cryptography", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
 {"id": 9, "type": "dynamic", "name": "Silent Archive", "value": 684, "solves": 179, "solved_by_me": false, "category": "Forensics", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
-여기 >> {"id": 25, "type": "dynamic", "name": "Hidden \udb40\udc75\udb40\udc74\udb40\udc66\udb40\udc6c\udb40\udc61\udb40\udc67\udb40\udc7b\udb40\udc31\udb40\udc6e\udb40\udc76\udb40\udc31\udb40\udc73\udb40\udc31\udb40\udc62\udb40\udc6c\udb40\udc33\udb40\udc5f\udb40\udc75\udb40\udc6e\udb40\udc31\udb40\udc63\udb40\udc30\udb40\udc64\udb40\udc33\udb40\udc7din Plain Sight", "value": 728, "solves": 166, "solved_by_me": false, "category": "Misc", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
+here >> {"id": 25, "type": "dynamic", "name": "Hidden \udb40\udc75\udb40\udc74\udb40\udc66\udb40\udc6c\udb40\udc61\udb40\udc67\udb40\udc7b\udb40\udc31\udb40\udc6e\udb40\udc76\udb40\udc31\udb40\udc73\udb40\udc31\udb40\udc62\udb40\udc6c\udb40\udc33\udb40\udc5f\udb40\udc75\udb40\udc6e\udb40\udc31\udb40\udc63\udb40\udc30\udb40\udc64\udb40\udc33\udb40\udc7din Plain Sight", "value": 728, "solves": 166, "solved_by_me": false, "category": "Misc", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},
 {"id": 22, "type": "dynamic", "name": "Break the Bank", "value": 766, "solves": 154, "solved_by_me": false, "category": "Web", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
 {"id": 6, "type": "dynamic", "name": "Landfall", "value": 799, "solves": 143, "solved_by_me": false, "category": "Forensics", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
 {"id": 20, "type": "dynamic", "name": "Small Blind", "value": 831, "solves": 131, "solved_by_me": false, "category": "Binary Exploitation", "tags": [], "template": "/plugins/dynamic_challenges/assets/view.html", "script": "/plugins/dynamic_challenges/assets/view.js"},  
@@ -49,6 +49,6 @@ curl https://utctf.live/api/v1/challenges -H "Cookie: session=<숨김>"
 ]}
 ```
 
-# 교훈
-항상 숨을 쉬는 순간에도 문제를 푸는 것과 직결되게 행동하자..?  
-숨쉬면 문제가 갑자기 풀리는 거임;;
+#lesson
+Let’s always act in a way that is directly related to solving the problem, even when taking a breath..?
+If you breathe, the problem will suddenly be solved;;

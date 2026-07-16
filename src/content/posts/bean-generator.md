@@ -1,7 +1,7 @@
 ---
 title: "[Codegate Junior Preliminary Quals] bean-generator writeup"
 published: 2026-03-29
-description: codegate2026 junior 예선
+description: codegate2026 junior preliminaries
 category: CTF
 tags: [CTF, writeup, codegate2026]
 draft: false
@@ -10,27 +10,26 @@ draft: false
 # Bean Generator
 > New Bean Generator is here! Can you reverse it to get the flag?
 
-## 문제 개요
-- **카테고리**: Rev
-- **주제**: 암?호화 기계
+## Problem Overview
+- **Category**: Rev
+- **Topic**: Cryptography Machine
 
 <!--more-->
 ---
 
-코드가 큰 관계로 좀 추상적으로 설명하게 될 것 같다.  
-아, 그리고 미련이 좀 많이 남아서 이번 대회 풀이는 많이 더러울 예정이다.
+Because the program is large, the discussion abstracts away components that do not affect the result. The analysis also records several unsuccessful hypotheses because they clarify how the final model was obtained.
 
-ghidra로 열고 entry -> main으로 가면 코드가 간결하다.  
-여기까지만...  
+If you open it with ghidra and go to entry -> main, the code is concise.
+The entry point itself is concise.
 
 ---
-## 정적분석
+## Static analysis
 ```bash
 file prob
-# 대충 prob: ELF 64-bit LSB pie executable, x86-64
+# roughly prob: ELF 64-bit LSB pie executable, x86-64
 ```
 
-아래는 `main()`의 일부다.
+Below is part of `main()`.
 ```c
   if (param_1 == 2) {
     FUN_00103360(local_48,param_2[1],&local_49);
@@ -54,44 +53,44 @@ file prob
   }
 ```
 
-풀 때 cpp이라 멘붕 온 게 좀 컸던 것 같다.  
-그리고 방대한 양의 코드, 이거 하나하나 다 보려다 정신 차리고 llm한테 정적분석 맡겼다.  
+C++-specific compiler artifacts initially made the decompilation difficult to interpret.
+And while trying to look at the huge amount of code, one by one, I came to my senses and left the static analysis to LLM.
 
-요즘 느끼는 거지만, llm을 같이 쓴다면 상대적으로 적은 코드는 내가,  
-긴 코드는 llm에게 빠르게 맡기는게 빨리 푸는 것에 도움이 된다.  
+I feel this way these days, but if I use LLM together, I have to write relatively little code.
+Leaving long codes to LLM helps solve them quickly.
 
-물론 학습의 효과는 떨어질 수 밖에 없다.  
-따라서 ctf가 끝나고 롸업을 쓸 땐 꼭 복기하면서 쓰고 있다.  
+This reduces the amount of direct implementation practice, so generated code still requires deliberate review.
+Therefore, when I write a review after the CTF is over, I make sure to restore it.
 
-언제쯤이면 효율을 쫓을 정도로 고수가 되어있을련지...  
+When will I become an expert enough to pursue efficiency?
 
-`entry`부터 `main`까지 요약하면 `PNG`파일을 받아 오는 부분이다라는 걸 알 수 있다.  
+If you summarize from `entry` to `main`, you can see that this is the part that receives the `PNG` file.
 
-일단 확실히 정적으로 알아야 할 함수는 main에 연결된
+First of all, the functions you need to know are static are connected to main.
 
 1. FUN_00103360
 2. FUN_00102670
 
-으로, 두 개 밖에 없다.  
-사실 이 외에도 알아야할 게 있지만, 그 부분은 딱히...?
+So, there are only two.
+Actually, there are other things you need to know, but that part is...
 
-나는 짧은 코드인 `FUN_00103360` 쪽으로 갔고  
-믿음직한 동료는 남은 함수로 들어가서 분석했다.  
+I went for the short code `FUN_00103360` and
+My trusty colleague went into the remaining functions and analyzed them.
 
 ---
-### 함수 분석
+### Function analysis
 #### `FUN_00102670`
-- 출력 파일 헤더: "BEAN" (4 bytes) + 0x01 (version 1 byte) = 5 bytes  
-- 암호화 키: .rodata 0x104280에 하드코딩
-- 랜덤 시드: /dev/urandom에서 3바이트(local_5c 2바이트 + local_5a 1바이트) 
-읽음
+- Output file header: "BEAN" (4 bytes) + 0x01 (version 1 byte) = 5 bytes
+- Encryption key: hardcoded in.rodata 0x104280
+- Random seed: 3 bytes from /dev/urandom (2 bytes local_5c + 1 byte local_5a)
+read
 
 <a href="https://ibb.co/kd5SZqc"><img src="https://i.ibb.co/pmbLq4X/2026-03-29-195423.png" alt="2026-03-29-195423" border="0"></a>
 
-암호화 방식은  
+The encryption method is
 AES-128 CTR
 
-`*puVar15 = 0x4e414542;` << 이 부분은 "BEAN"  
+`*puVar15 = 0x4e414542;` << This part is "BEAN"
 
 ```c
       std::ifstream::~ifstream((ifstream *)&local_268);
@@ -99,190 +98,189 @@ LAB_0010278f:
                     /* try { // try from 001027a3 to 001027a7 has its CatchHandler @ 0010330e */
       std::ifstream::ifstream((ifstream *)&local_268,"/dev/urandom",4);
                     /* try { // try from 001027c5 to 001027c9 has its CatchHandler @ 001032f6 */
-      if (((local_148 & 5) != 0) ||
-         (std::istream::read((char *)&local_268,(long)&local_5c), local_148 != 0)) {
+      if (((local_148 & 5)!= 0) ||
+         (std::istream::read((char *)&local_268,(long)&local_5c), local_148!= 0)) {
         tVar13 = time((time_t *)0x0);
         uVar14 = tVar13 * -0x61c8864680b583eb ^ (ulong)&local_5c;
         uVar14 = uVar14 ^ uVar14 >> 0x21;
         local_5c = (undefined2)uVar14;
         local_5a = (byte)(uVar14 >> 0x10);
 ```
-여기서 **시드 하위 2바이트**, **시드 상위 1바이트**가 정해진다.  
-쭉 분석해보면 파일에 따로 저장되지 않는다는 걸 확인할 수 있다.(ㄲㅂ)  
+Here, **lower 2 bytes of seed** and **upper 1 byte of seed** are determined.
+If you analyze it further, you can confirm that it is not saved separately in the file. ()
 
-그 뒤에는 수상한 8바이트 대입이 보임.  
-하드코딩된 값... 그럼 아마 키값이겠지?? <  이렇게 예상하고 풀었다.
+After that, you can see a suspicious 8-byte assignment.
+Hardcoded value... Then it is probably a key value? < This is how I expected and solved it.
 
-값이 뭔지 모르겠기도 하고, 사용된 알고리즘에 대해 딱히 생각나는 내용이 없었음.  
+I did not know what the value was, and I couldn't remember anything about the algorithm used.
 
-알고 있던 내용은 리틀 엔디언, "BEAN" 문자열을 문자열 객체에 넣기,  
-랜덤 시드 생성, 참내.. 뭔 값을 넣어서 암호화할 때 어디다 쓰나.. 싶었는데.
+What I knew was little endian, putting the "BEAN" string into a string object,
+Random seed generation, really... I was wondering what value it would be used for when encrypting it.
 ```c
-      local_318 = 0x9f2b5c7de8a9f1c4; // 근데 이거 엔디안이 잘못 해석됨;; 이것 때문에 
+      local_318 = 0x9f2b5c7de8a9f1c4; // The decompiler presents this value with misleading endianness.
       uStack_310 = 0xde9312bba0d4e861;
 ```
 
-저 값이 여기 있는 건데,  
-하위 4바이트 읽어오는 부분이다.  
+That value is here,
+This is the part where the lower 4 bytes are read.
 ```h
                              DAT_00104280                                    XREF[1]:     encrypt_to_bean:00102828 (R)   
-        00104280 c4              ??         C4h
-        00104281 f1              ??         F1h
-        00104282 a9              ??         A9h
-        00104283 e8              ??         E8h
-        00104284 7d              ??         7Dh    }
-        00104285 5c              ??         5Ch    \
-        00104286 2b              ??         2Bh    +
-        00104287 9f              ??         9Fh
-        00104288 61              ??         61h    a
-        00104289 e8              ??         E8h
-        0010428a d4              ??         D4h
-        0010428b a0              ??         A0h
-        0010428c bb              ??         BBh
-        0010428d 12              ??         12h
-        0010428e 93              ??         93h
-        0010428f de              ??         DEh
+        00104280 c4??         C4h
+        00104281 f1??         F1h
+        00104282 a9??         A9h
+        00104283 e8??         E8h
+        00104284 7d??         7Dh    }
+        00104285 5c??         5Ch    \
+        00104286 2b??         2Bh    +
+        00104287 9f??         9Fh
+        00104288 61??         61h    a
+        00104289 e8??         E8h
+        0010428a d4??         D4h
+        0010428b a0??         A0h
+        0010428c bb??         BBh
+        0010428d 12??         12h
+        0010428e 93??         93h
+        0010428f de??         DEh
 ```
 
 
-리버싱 할 때마다 어느 정도 감으로 흐름 잡아야 하는 부분이 많은데,  
-개고생하기 싫어서 리버싱이 이럴 때 별로긴 함
+Whenever reversing, there are many parts that require some sense to control the flow.
+I do not want to go through all the trouble, so reversing is not a good idea in this case.
 ```c
       do {
         uVar10 = *(uint *)((long)puVar23 + 0xc); 
-        // 난해하지만 16바이트씩임 ㅇㅇ...
-        // 0x10, & 0xcU(1100) 보고 감으로 잡음, 자세한 건 몰라서 알아낼 예정
+        // The logic is difficult to read, but it operates on 16-byte units.
+        // The 0x10 stride and 0xc mask indicate a table-driven transformation; the exact derivation remains to be verified.
         if (((0x10 - (int)&local_318) + (int)puVar23 & 0xcU) == 0) {
-          lVar12 = (long)iVar29; // 현재
-          iVar29 = iVar29 + 1; // 다음
-          // 테이블 기반
+          lVar12 = (long)iVar29; // today
+          iVar29 = iVar29 + 1; // next
+          // table based
           uVar10 = CONCAT31(CONCAT21(CONCAT11((&DAT_00104180)[uVar10 & 0xff],
                                               (&DAT_00104180)[uVar10 >> 0x18]),
                                      (&DAT_00104180)[uVar10 >> 0x10 & 0xff]),
                             (&DAT_00104180)[uVar10 >> 8 & 0xff] ^ (&DAT_00104168)[lVar12]);
         }
-        puVar24 = (ulong *)((long)puVar23 + 4); // 카운트 증가
+        puVar24 = (ulong *)((long)puVar23 + 4); // count increase
         *(uint *)(puVar23 + 2) = uVar10 ^ (uint)*puVar23;
         puVar23 = puVar24;
-      } while (puVar24 != &local_278); // local_318 ~ local 278? = 40, 0x0a0, 160, 4씩 증가, 40번.
+      } while (puVar24!= &local_278); // local_318 ~ local 278? = 40, 0x0a0, 160, 4increase by, 40th.
 ```
-바로 밑에 암호화 과정이 있었다.  
+The encryption process was right below it.
 
-기억하기론 이 때가 아마 수업중 선생님이 내게 오셔서 숙제 다 했는지 검사하시는... 중이었다.  
-화면 돌리기 전에 바로 복사하여 든든한 동료에게 던지고 연산을 분석해달라고 적은 뒤  
+From what I remember, it was probably during class when the teacher came to me and checked if I had done my homework.
+Before turning on the screen, copy it immediately, throw it to a reliable colleague, and write down the calculation request to be analyzed.
 
-작성중이던 한글 파일로 돌아와서 미리 생각해두었던 내용을 적었다...  
-옆에서 10초정도 보셨던 것 같은데.. 그 때만큼 당황스러운 게 또 없는듯.  
+I returned to the Hangul file I was writing and wrote down what I had in mind...
+I watched it for about 10 seconds from the side... I do not think there is anything more embarrassing than that time.
 
-어쨌거나  
-`uVar10`에는 4바이트짜리 결과물이 나온다.  
-좀 어지럽긴 해도 가장 안쪽 **CONCAT11()** 부터 해석하면  
+`uVar10` produces a 4-byte result.
+Although it is a bit confusing, if you interpret it from the innermost **CONCAT11()**,
 
-- **`DAT_00104180`의 하위 1바이트**와 **`DAT_00104180`의 상위 1바이트**
-- **위 결과**와 **하위 1바이트**를 합친다  
-- **위 결과**와 ..  
+- **lower 1 byte of `DAT_00104180`** and **higher 1 byte of `DAT_00104180`**
+- Combine **above result** and **lower 1 byte**
+- **Above result** and..
 
-이런 식으로 이해하다 막혔었다.  
-배열에 접근, 이 말은 테이블에 접근하는 것과 같다는 생각을 했고  
-그럼 테이블에 임의로 접근해서 값을 덮어씌우는 거라고 생각했다.  
-왜냐하면 암호학에서는 혼돈이 있어야한다고 배웠던 기억이 있기 때문이다. 
+I was stuck trying to understand it this way.
+I thought that accessing an array was the same as accessing a table.
+Then I thought it was accessing the table randomly and overwriting the value.
+This is because I remember learning that there should be chaos in cryptography.
 
-다행히도, 이 가설을 바탕으로 나름대로 결론을 얻었다.  
-순서를 따라서  
+Fortunately, I came to my own conclusion based on this hypothesis.
+in order
 
-- 최하위 바이트 치환
-- 최상위 바이트 치환(여기까지가 첫 번째 바이트)
-- 두 번째 바이트 치환
-- 세 번째 바이트 치환 + 키와 XOR 
+- Replace least significant byte
+- Replace the most significant byte (this is the first byte)
+- Substitute second byte
+- Third byte substitution + XOR with key
 
-이 과정이 계속 이해가 가지 않았다.  
-계속 정리하다  
+I still did not understand this process.
+keep organizing
 ```c
 uVar10 = SubBytes(RotWord(uVar10)) ^ rcon[round];
 ```
 
-지나고 나면  
+After it passes
 
 ```c
 local_58 = ((ulong)CONCAT12(local_5a, local_5c) | 0x764e414542000000) ^ local_318;
 uStack_50 = ((ulong)(byteswap32(n) << 0x20 | 0x31)) ^ uStack_310;
 ```
-블록 n마다 위 과정을 수행한다.  
+The above process is performed for each block n.
 
 `0x764e414542000000 = "BEANv"`  
 
-16바이트 카운터 블록 구조는  
-`시드 3바이트 + "BEANv" + 31 00 00 00 n(블록 번호)`
+The 16-byte counter block structure is
+`3-byte seed + "BEANv" + 31 00 00 00 + n (block number)`
 
-마지막으로 **AES 라운드**가 돌아간다.  
-표준 AES-128이라 살았다.  
+Finally, the **AES round** takes place.
+I survived because it was standard AES-128.
 
-출력은
+The output is
 ```c
 for (uVar33 = uVar32; uVar33 < uVar25; uVar33++) {
     pcVar16[uVar33] = encrypted_byte[uVar33 - uVar32] ^ plaintext[uVar33];
 }
 ```
 
-겨우겨우 이 과정은 aes-128이라는 걸 깨달았다.  
-이후 급히 풀긴 했다..
+I finally realized that this process is AES-128.
+After that, I quickly solved it.
 
 ```
 AES-128 CTR
-  키:        c4f1a9e87d5c2b9f61e8d4a0bb1293de  (하드코딩)
-  카운터 nonce: [seed0][seed1][seed2][BEANv]
-  카운터:       [0x31][0x00][0x00][0x00][block_num 4byte]
-  시드:         /dev/urandom 3바이트
+  key:        c4f1a9e87d5c2b9f61e8d4a0bb1293de  (hard coding)
+  bar nonce: [seed0][seed1][seed2][BEANv]
+  bar:       [0x31][0x00][0x00][0x00][block_num 4byte]
+  seed:         /dev/urandom 3byte
 ```
 
-여러모로 지쳤다.. 리버싱 문제 풀다가 왜 암호학 배경지식을...  
-llm이 거의 다 해주긴 했지만 쫓아가려다 내 지식이 부족하다는 걸 너무 많이 느꼈다.  
+I was exhausted in many ways... Why did I need background knowledge in cryptography while solving a reversing problem...
+LLM did almost everything, but I felt that my knowledge was lacking while trying to catch up.
 
 
 #### `FUN_00103360`
-`param1`이 구조체 느낌이다.  
-0번째 인덱스엔 데이터 포인터,  
-1번째 인덱스엔 문자열 길이,  
-2번째 인덱스엔 ..  
+`param1` feels like a structure.
+The 0th index is a data pointer,
+The first index is the string length,
+In the second index...
 
-cpp을 아는 자들은 내가 얼마나 바보같은 짓을 했는지 알것이다.  
-이 함수는 걍 cpp의 std::string sso 생성자다.  
-배경지식이 이렇게 중요하구나~~tlqkf~~  
-괜히 분석하고 있었다.  
+Those who know cpp will know how foolish I was.
+This function is simply the std::string sso constructor of cpp.
+Background knowledge is so important~~tlqkf~~
+I was analyzing it for no reason.
 
 ---
-## 익스플로잇
+## Exploit
 
-가장 먼저 flag.bean의 **헤더**를 보고  
-`a55480c481daba941cc3acee8505bd23` 값을 얻을 수 있다.  
-이게 **첫** 16비트 암호문이다. 앞 'beanv'를 지나고 나서부터 찍었다.
+First look at the **header** of flag.bean
+You can get the value `a55480c481daba941cc3acee8505bd23`.
+This is the **first** 16-bit ciphertext. I took this picture after passing the 'beanv' in front.
 
-시드가 있어야 하는데 없다는 게 첫번째 문제다.  
+The first problem is that there needs to be a seed, but there isn't one.
 
-입력 파일이 PNG,  
-따라서 png의 헤더를 이용할 것이다ㅏ.  
+The input file is PNG,
+Therefore, we will use the png header.
 
-시그니처는(PNG)
+Signature (PNG)
 ```hex
 89 50 4e 47 0d 0a 1a 0a
 ```
-와 같이 생겼다.
-그리고 또 고정인 값이 `IHDR 헤더`인데, 13바이트이다.  
-이 중 고정값인 8바이트만 가져와 주면(이 문제에서) 
+It looks like
+And the fixed value is `IHDR header`, which is 13 bytes.
+Of these, if only 8 bytes are taken, which is a fixed value (in this problem),
 
-`2c04ce838cd0a09e1cc3ace3cc4df971` << 이 값을 얻게 된다. 얘가 키스트림임.
+`2c04ce838cd0a09e1cc3ace3cc4df971` << You will get this value. This is keystream.
 
-암호화 과정은
+The encryption process is
 ```txt
 keystream[0:16] = ciphertext[0:16] XOR plaintext[0:16]
 ```
-인데,  
+But,
 
-`keystream[0:16]`이  `AES_encrypt(key, counter_block_0)`이므로  
-`counter_block_0 = AES_decrypt(key, keystream[0:16])`... 아 머리 아파  
+Since `keystream[0:16]` is `AES_encrypt(key, counter_block_0)`
+`counter_block_0 = AES_decrypt(key, keystream[0:16])`
 
-그니까 이미 아는 키랑, 키스트림 써서 시드 구하고  
-복호화하면 풀린다는 얘기다.  
+So, use the key you already know and the keystream to find the seed.
+This means that if you decrypt it, it will be released.
 
 ```py
 from Crypto.Cipher import AES
@@ -292,14 +290,14 @@ cipher = AES.new(key, AES.MODE_ECB)
 counter_block_0 = cipher.decrypt(keystream_block0)
 print(counter_block_0.hex())
 ```
-카운터 블록을 복원하기 위한 키/키스트림이 있으니 복원해준다.  
+There is a key/keystream to restore the counter block, so restore it.
 
-이제 모든 게 갖춰졌으니 복호화를ㅈ ㅈ닎ㄴㅇㅈㄷㄹㅈㄷㄹ진행...  
-아tlqkf개어렵네  
+Now that everything is in place, proceed with the decryption...
+Ah atlqkf it’s hard
 
-`flag.bean`이 주어지지 않을 수가 없었던 이유를 이 때 이해했다. 그러니까 대회 시작 30분 뒤..  
-수업끝나기 1분전 나는  
-이 내용을 바탕으로 걍 던졌다.  
+At this time, I understood why `flag.bean` had no choice but to be given. So, 30 minutes after the competition starts...
+1 minute before class ends, I
+The solver follows directly from these recovered parameters.
 
 <a href="https://ibb.co/mV2FbNwj"><img src="https://i.ibb.co/fzyGqD5g/2026-03-30-003317.png" alt="2026-03-30-003317" border="0"></a>
 
@@ -341,4 +339,4 @@ print(f'PNG magic ok: {plaintext[:8] == bytes([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1
 print(f'Saved to {output_path}')
 ```
 ---
-다시는 이런 머리 터지는 일이 없게 평소에 공부 열심히 하겠스니다.
+I will study hard so that my head does not explode like this again.

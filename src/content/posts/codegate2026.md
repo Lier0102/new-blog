@@ -1,167 +1,52 @@
 ---
-title: "[Codegate Junior Preliminary Quals] 후기"
+title: "[Codegate Junior Preliminary Quals] Retrospective"
 published: 2026-03-29
-description: codegate2026 jr 예선
+description: An evidence-based retrospective on the Codegate 2026 Junior Preliminary Qualifier.
 category: CTF
 tags: [CTF, writeup, codegate2026]
 draft: false
 ---
 
-# 코게 예선 후기
+# Codegate 2026 Junior Preliminary: A Retrospective
 
-...  
-솔직히 내가 잘하는 편도 아니고, 공부를 많이 한 것도 아니지만  
-예선에서 떨어졌다는 게 맘에 들지 않는다.  
+I finished the preliminary round in **26th place**, immediately outside the qualifying range. The result is useful precisely because the margin was small: it makes the effects of preparation, scheduling, and challenge selection unusually visible.
 
-최종적으로 **26등**을 기록했으나..  
-허허... 허허허....  
-
-하나만..아니 평소에 암호학 공부를 했더라면 본선에 갔을텐데...  
-수업만 없었다면 본선에 확정적으로 갈 수 있었을텐데...
 <!--more-->
----
-대회는 일요일 오전 9시에 시작했다(KST)  
-학교에서 일요일에 취업 역량 강화 특강을 준비하셨다길래..  
-그냥 듣고 수업 도중에 양심없게 다른 거 하면 좀 그러니까  
-나름대로 빨리 끝내고 문제 풀었다.  
 
-오전 9시부터 12시 30분까지 수업이 진행되었다.  
+## Initial conditions
 
-솔직히 자신도 없었다. 이번 년도부터 실제로 ctf에 참가하기 시작했는데  
+The competition began at 09:00 KST on Sunday. A mandatory school lecture occupied the interval from 09:00 to 12:30, so my effective contest time was substantially reduced. I began solving during a break and completed my first challenge near the end of the first class period, at which point the scoreboard placed me around 50th.
 
-등수는 하나같이 비정상이었기 때문이다.  
-기본적으로 **200+등을 매번 기록했다.**  
+This was also my first year of regular CTF participation. Previous results were generally outside the top 200, so a top-30 finish did not appear likely at the outset. That prior should be kept in mind when interpreting the final result: 26th place was disappointing relative to qualification, but it was a clear improvement over the available baseline.
 
-이러다보니 이번 코드게이트에서도 당연히 30위 안에는 들어가지도 못하겠거니.. 싶었다.  
+## Challenge selection
 
-가뜩이나 나는 AI와도 친숙하지 않은 편이고,  
-실력도 그럭저럭...  
+I concentrated on reversing and binary exploitation, the two categories in which I could evaluate program behavior most efficiently. The early `rev` and `pwn` tasks had concise implementations and relatively legible intended solutions. By the time the first screenshot below was taken, I had solved four challenges.
 
-그래도 시작되자마자 어떻게든 수업중에 풀다...  
-1교시 수업이 끝날 때 문제를 해결했다.  
+<a href="https://ibb.co/WNqB2h1k"><img src="https://i.ibb.co/9mzyrDjb/Screenshot-2026-03-30-at-9-17-43-AM.png" alt="Codegate scoreboard during the preliminary round" border="0"></a>
 
-50등인걸 보고 기분이 좋았다.  
-반면에, 시작한지 40분밖에 안됐는데 벌써 두 문제 이상 푼 사람들이 있을 거라 생각하니...  
+The principal strategic error was time allocation. I skipped lunch and then investigated the `misc` challenge `welcomeflag`, assuming that its title implied a short solution. That assumption was not supported by evidence, and the resulting detour produced little progress. A better policy would have been to impose a fixed investigation budget and return to higher-confidence categories once that budget expired.
 
-좀 기분이 더러웠다.  
-그냥 그런 느낌이다.  
+After lunch, I used LLM assistance for web tasks while continuing the reversing and pwn analysis myself. This division of work produced some useful results, but the interaction cost was non-trivial: validating generated hypotheses and supplying sufficient context consumed time that was not reflected in the raw solve count.
 
-**리버싱/포너블**을 위주로 쭉 기드라 열었다 닫았다 열었다 닫았다  
-# 열었다 닫았다 열었다 닫았다  
-## 열었다 닫았다 열었다 닫았다  
-**열었다 닫았다 열었다 닫았다**
+<a href="https://ibb.co/VWhyWVwC"><img src="https://i.ibb.co/RpMnp2j6/Screenshot-2026-03-30-at-9-19-20-AM.png" alt="Codegate scoreboard after lunch" border="0"></a>
 
-~~__열었다 닫았다 열었다 닫았다__~~
-# ~~*__열었다 닫았다 열었다 닫았다__*~~
+## Late-stage performance
 
-# 열
-# 었
-# 다
-# 닫았
-# 다
-**열**~~었~~__다__*닫*았
-# 다
+At approximately 16:00, several solves arrived in close succession. After completing `greybox`, the highest-value decision would have been to continue directly with pwn. Instead, I moved repeatedly among cryptography, web, misc, and pwn. This category switching occupied roughly four hours and reduced the depth of analysis in every category.
 
+The final phase therefore focused on `cobweb`, a pwn challenge that I had nearly completed earlier. A collaborator completed a web challenge during the same period. I eventually obtained another pwn solve at 23:58, two minutes before the contest ended.
 
-...  
+<a href="https://ibb.co/NgJZsYDs"><img src="https://i.ibb.co/hx4Dy8Qy/Screenshot-2026-03-30-at-9-20-44-AM.png" alt="Codegate scoreboard during the final phase" border="0"></a>
 
-쓰기 싫어졌다.  
+At that point, my projected score was close to 25th place, but the participant in 25th had also added a solve. There was no realistic path to another validated submission in the remaining two minutes. The final rank was therefore 26th.
 
----
-<a href="https://ibb.co/WNqB2h1k"><img src="https://i.ibb.co/9mzyrDjb/Screenshot-2026-03-30-at-9-17-43-AM.png" alt="Screenshot-2026-03-30-at-9-17-43-AM" border="0"></a>
-어쨌거나 나름대로 개같이 구르다 운좋게 4문제를 풀었다.  
-...감도 안온다.  
-웹은 처음부터 내가 풀 생각을 하지 않고 바로 llm들한테 넘겼다.  
+## Interpretation
 
-다행히 `rev`/`pwn` 이 쪽은 여기까진 어렵지 않았다.  
-오히려 의도라던가 코드가 간결하고 파악하기 쉬운 편이라 다행이라고 생각했다.  
+Three observations follow from this attempt:
 
-그래서 점심도 안 먹고 어떻게든 풀려고 했다.  
+1. Cryptography was the largest preparation gap. Even modest prior practice might have converted one additional challenge.
+2. Context switching was more costly than the difficulty of any single challenge. A category should be abandoned only after recording the current hypothesis and setting an explicit condition for returning.
+3. LLM output should be treated as untrusted experimental input. It can widen the search space, but every claim still requires local verification.
 
-그런데 `misc`문제 하나가 내 눈에 들어왔다.  
-
-> **welcomeflag**?? 이거 안 풀면 바보 아니냐 ㅋㅋㅋ
-
-어 바보 아니다.  
-안풀어도 된다  
-아니 그 때 풀면 안됐다.  
-
-차라리 그 때 점심 먹고 돌아왔더라면...  
-
----
-<a href="https://ibb.co/VWhyWVwC"><img src="https://i.ibb.co/RpMnp2j6/Screenshot-2026-03-30-at-9-19-20-AM.png" alt="Screenshot-2026-03-30-at-9-19-20-AM" border="0"></a>
-
-점심을 먹고 돌아와서 풀었다.  
-계속 자습실에 앉아서 개같은 web문제를 풀기 위해  
-llm들한테 말을 걸었다...  
-정확도를 높이기 위해 얼마나 분노를 참으며 정중하게 대화했는지 모르겠다.  
-
-이제 나도 영국인??  
-보다는 한영키 잘못 누른 한국인이 맞다고 본다. 
-
-뭐냐... utctf인가 tamuctf인가.. 거기에서 봤던 기적의 벌레 문제랑  
-비슷한 징그러운 reversing 문제도 만났다.  
-
-그래서 그만둘 뻔했음.  
-
----
-<a href="https://ibb.co/NgJZsYDs"><img src="https://i.ibb.co/hx4Dy8Qy/Screenshot-2026-03-30-at-9-20-44-AM.png" alt="Screenshot-2026-03-30-at-9-20-44-AM" border="0"></a>
-
-이때가 제일 미친 시간이었다.
-4시에 계속해서 풀리길래  
-하..할 수 있을지도..?  << 이런 생각하다가  
-
-운 좋게 풀린 greybox를 끝내고  
-바로 pwn으로 가서 끝내던가 했어야했다.  
-
-AD4K때문인지 집중을 전혀 못해서 하나도 못하는 암호학 가서 구르다  
-웹 가서 구르다 misc 가서 구르다 결국에는 pwn으로 와서  
-풀었나?? 싶었지만 안풀려서 crypto를 llm한테 던졌다.  
-
-이 짓 하는데 4시간 걸렸다.  
-머리 아파서 산책 좀 하러 밖에 나갔는데 밥먹고 돌아오는 길에 커플들을  
-너무 많이 만났다.  
-
-학교 앞, 학교 뒤  
-학교 중간  
-
-도대체 왜 이렇게 많은 이들이 내 장래를 막는 것인가.  
-
-..이런 이유로 갑자기 학교가 싫어졌다.  
-진작에 자퇴 했어야해... ㄺㅎㅃ~~  
-
----
-
-위 사진에 대해 계속 이어가자면  
-저런 미친 정신 상태속에서도  
-
-어떻게든 아까 거의 푼 것 같았던 cobweb을 노렸다.  
-
-시간이 얼마 남지 않아 애초에 web은 다 llm한테 던졌다.  
-계획상 웹을 내 손으로 푼다는 선택지는 애초에 없었기 때문이다.  
-
-운 좋게 내가 pwn을 풀었을 때 든든한 조력자가 web을 풀었다.  
-이후는 통곡의 다리를 건넜다.  
-
-40분동안 진전 없이 기드라 보면서 분노하는 바람에 난데없이 주술회전을 봤다.  
-
-근데 솔직히 옷코츠 유타 전투씬 개지림  
-
-11시 58분에 겨우 pwn 하나 풀고... 원래는 내가 생각했던 점수에 따르면  
-이 때 25위를 제쳤어야 하는데..  
-25위에 계시던 분들이 한 문제를 더 푸셨다.  
-
-그래서 나도 2분 사이에 어떻게든 풀려고 고군분투했으나..  
-
-그게 될 리가 없었다.  
-llm << 얘랑 같이 한 문제 팠는데 결국엔 실패  
-
-롸업 따윈 궁금하지 않다.  
-
-중간 중간 분명 쓸 수 있는 시간이 많았는데 쓰지 못해 상당히 슬프다.  
-
-아, 그리고 사진을 다 첨부하는 걸 잊었다. 어쨌거나 16문제밖에 풀 수 없어서 조금 슬프다..
-
----
-생각할수록 자기합리화의 지옥에 빠진다.  
-~~아니 근데 진짜 좀만 했으면 내가 본선 갔다니까??~~
+It is tempting to explain the result entirely through the school schedule or the narrow qualifying margin. Those factors mattered, but they are not actionable. The useful conclusion is narrower: preparation in cryptography and stricter time-boxing would have provided the largest expected improvement.

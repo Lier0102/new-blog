@@ -2,54 +2,53 @@
 title: "[Codegate Junior Preliminary Quals] CobWeb writeup"
 published: 2026-04-24
 category: CTF
-description: 코게 주니어 예선
+description: Codegate Junior Preliminary
 tags: [CTF, writeup, codegate2026]
 draft: false
 ---
 
 # Codegate - CobWeb
 
-아니.. 이게 `conero` 문제에서 적다 배우고 밀리다 겹치고..  
-별 이상하게 엉켰다. 배운 건 많은데 롸업을 완성하지 못했다.  
-완성할 시간도 충분히 있었는데, 다른 거 하느라 그런 듯, 그래서  
+No.. this is the `conero` problem, where you learn little and get pushed back and overlap..
+The stars were strangely tangled. I learned a lot, but I was not able to complete the book.
+I had enough time to complete it, but It appears it was because I was busy doing other things, so
 
-내가 풀었던 `pwnable` 종류의 문제 중 하나인 **cobweb**을 적기로 함.  
-읽기 쉽게 바뀐 부분은 글 맨 아래에 첨부했음
+I decided to write down **cobweb**, one of the `pwnable` type problems I solved.
+The changed part to make it easier to read is attached at the bottom of the article.
 
 ---
 ## Description
-> I wanted to create a web application.. but I don't know how to use web frameworks.
+> I wanted to create a web application.. but It remains unclear how to use web frameworks.
 > So I decided to use pure C to make a web application!
 
-쉬운 문제로 보였고, 실제로 쉽기도 했다.  
-약간 웹해킹 문제를 재밌게 만들고 싶어서 이쪽으로 넣은 것 같기도 하다.  
+It seemed like an easy problem, and it was actually easy.
+I put it here because I wanted to make the web hacking problem a little more interesting.
 
-- **카테고리**: Pwn
-- **주제**: C로 만든 낭만적인 웹 앱(??;; )
+- **Category**: Pwn
+- **Topic**: Romantic web app made in C (?;; )
 
 ---
-## 정적 분석
-#### 파일 둘러봄
-그나마 경험이 있어서 `nm`이랑 `strings`를 잘 썼냐고 물어볼 것이다.  
-아니? 난 기드라부터 열었다.  
+## Static analysis
+#### Browse files
+Since I have some experience, I will ask whether `nm` and `strings` were used well.
+no? I opened Ghidra first.
 
-우리는 이것을 원시인이라고 부른다.  
-아니, 정확히는 원시인도 아니고 현대인의 탈을 쓴 원시인이다.  
+We call this caveman.
+No, not exactly a primitive person, but a primitive person disguised as a modern person.
 
-바이너리에 대한 정보도 없이 그냥 디컴파일러 켜버린 나를 생각하면 아직도 어처구니가 없다.
-참.. 그 기드라에서의 여정을 여기에 담고 싶지만 롸업이라 나중에 번외로 한꺼번에 모아서 내보겠다.  
+Opening the decompiler before collecting basic binary metadata was inefficient. The analysis below therefore begins by recovering that context.
 
-파일은 이렇다. `Stripped` 되어있기에 `strings`로 적당히 정보만 뽑아내고 들어가자.
+The file is like this. Since it is `Stripped`, let's extract only the appropriate amount of information and enter `strings`.
 ```bash
-./board_server: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV),  
+./board_server: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV),
 dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2,  
 BuildID[sha1]=c77cc115ae1be0d5856540a5f38e881fdc41cf0d, for GNU/Linux 3.2.0, stripped
 ```
 
-문제에서 제공된 나머지 파일들의 내용들도 첨부하려 했지만  
-`ctf-archives` 레포가 워낙 유명하니까 그냥 이쪽에서 받아 쓰시면 될듯  
+I tried to attach the contents of the remaining files provided in the problem, but
+The remaining challenge files are available in the `ctf-archives` repository and are not duplicated here.
 
-그래서 의미있는 파일의 내용을 첨부하자면:  
+So, to attach the contents of a meaningful file:
 
 `ctf.xinetd`,
 ```bash
@@ -68,7 +67,7 @@ service ctf
     flags           = REUSE
 }
 ```
-그리고 `run.sh`가 있다.
+And there is `run.sh`.
 ```sh
 #!/bin/bash
 RAND=$(od -An -N2 -tu2 /dev/urandom | tr -d ' ')
@@ -77,27 +76,23 @@ timeout 60 su -c "/home/ctf/board_server $NUM" ctf
 rm -rf /home/ctf/data/board_${NUM}.db
 ```
 
-**서버 런처**는 `9883`포트 고정, **실제 웹서버**는 `10000`~`60000` 포트 사이로 결정된다.  
+**Server launcher** is fixed to port `9883`, **actual web server** is determined between ports `10000`~`60000`.
 
-또 중요한 `bot.py`를 보면:  
+Also looking at the important `bot.py`:
 ```python
-def read_url(url, flag, session_id):
-    ...
+def read_url(url, flag, session_id):...
     try:
         driver.add_cookie({"name": "session_id", "value": session_id})
         driver.add_cookie({"name": "flag", "value": flag})
-        driver.get(url)
-        ...
-    except:
-        ...
-    ...
+        driver.get(url)...
+    except:...
 ```
-이 봇은 `/post/{id}`를 조회하는 동작을 수행한다.  
-약간 `XSS` 문제 느낌..
+This bot performs the action of querying `/post/{id}`.
+This behavior suggests an XSS-oriented attack surface.
 
 ---
-#### strings로 둘러봄
-이제 `strings`로 유의미한 값들 좀 둘러보자.  
+#### Browsing with strings
+Now let’s look at some meaningful values ​​with `strings`.
 ```bash
 /board
 /login
@@ -105,67 +100,64 @@ def read_url(url, flag, session_id):
 /logout
 session_id=; Max-Age=0
 /post/new
-/post/
-...
-/delete
-...
+/post/...
+/delete...
 /post/%d
-/report
-...
+/report...
 /post/%d/edit
 /post/new
 ```
 
-대략적으로 뽑아봤다.  
-포함된 정보는 다음과 같음:
+I roughly drew it out.
+Information included is:
 
-1. 엔드포인트
+1. Endpoint
 2. SQL
 
-근데 하필 노출된 쿼리가  
+But the exposed query happened to be
 ```sql
-...(CREATE 제외)
+... (CREATE omitted)
 INSERT INTO users (id, username, password) VALUES (0, 'admin', 'x$x')
-INSERT INTO posts (user_id, title, content) VALUES (?, ?, ?);
-UPDATE posts SET title = ?, content = ?, user_id = 0 WHERE id = ?;
-UPDATE posts SET title = ?, content = ? WHERE id = ? AND user_id = ?;
+INSERT INTO posts (user_id, title, content) VALUES (?,?,?);
+UPDATE posts SET title =?, content =?, user_id = 0 WHERE id =?;
+UPDATE posts SET title =?, content =? WHERE id =? AND user_id =?;
 ```
-일단 **관리자 id가 `0`** 이고, 비번은 모르겠음..  
-대신 `UPDATE`문으로 작성된 쿼리에서 `user_id=0`이라고 **고정적으로** 다룰 수 있는 부분이 있다.  
+First of all, **administrator id is `0`**, and It remains unclear the password..
+Instead, in a query written with the `UPDATE` statement, there is a part that can be **fixed** treated as `user_id=0`.
 
-관리자가 쓴 글 수정 가능하다는 게 가능하면 좀 사기일지도.  
+If ordinary users can edit administrator-authored posts, the authorization boundary is already invalid.
 
-아무튼 비번에 관해 언급하지 않은 이유는 간단하다.  
-문제 파일이 전체적으로 제공되었다는 점에서 비번이 `x$x` 처럼 생겼다면 이건 백퍼!!!  
+the reason I did not mention the password is simple.
+Given that the problem file was provided in its entirety, if the password looks like `x$x`, this is a hundred percent!
 
-대충 해쉬된 값이다. 라는 암시인 거ㅋ
+This is a roughly hashed value. that is a hint.
 
 ---
-## 정적 분석-2
-구라안치고 여기 쓰고 싶은 내용이 너무 많다. 번외편을 얼른 올리고 싶은데,  
-그러자니 롸업을 써야 하고, 도중엔 또 잡생각 들어서 적으려 하고... 참 쉽지 않다.  
+## Static Analysis-2
+There is so much I want to write about here. I want to upload an extra episode quickly.
+So, I have to write a review, and while I am at it, random thoughts come to mind and I try to write it down... it is not easy.
 
-든든한 친구에게 맡기면 되지 않냐, 라고 묻는다면  
-당연히 아니다, 롸업은 이 재미로 쓰는 거지 내가 딴 게 뭐 할 거 있다고  
-이걸 버림?! 시간이 남아도니 이런다.. 나도 얼른 고수가 되고 싶다  
+If you ask, “Wouldn’t it be okay to leave it to a reliable friend?”
+The password itself is not required for the exploit path examined here.
+Throw this away?! Even though I have time left, I want to become a master as soon as possible.
 
 ---
 #### Off-By-One
 
-이어서,  
+Next,
 ```c
-// handle_client_request @ 0x00102ba0 (요약)
+// handle_client_request @ 0x00102ba0 (summation)
 if (method == POST && path matches "/post/<id>/edit") {
     title = thunk_extract_form_field_value(..., "title");
     content = thunk_extract_form_field_value(..., "content");
     op_result = update_post(post_id, sess_user_id, title, content);
 }
 ```
-이렇게 생긴 부분이 포함돼있다.  
-ㄹㅇ 겉으로만 봐선 전혀 문제가 없음. 내가 이상한 걸지도  
+It includes a part that looks like this.
+ From the outside, there is no problem at all. Maybe I am weird
 
-취약점은 `update_post()`에서 먼저 시작된다.  
-함수 내는 대략 이렇게 생겼는데,  
+The vulnerability starts first at `update_post()`.
+The function looks roughly like this,
 
 ```c
 // update_post @ 0x001045c0
@@ -173,24 +165,24 @@ FUN_00105270(puVar1, param_3, 0x600);   // title escape
 FUN_00105270(puVar2, param_4, 0x6000);  // content escape
 
 if (*(int *)(puVar5 + 0x4ff0) == 0) {
-    // admin path: ownership check 없이 업데이트
+    // admin path: ownership check without update
     sqlite3_prepare_v2(db,
-      "UPDATE posts SET title=?, content=?, user_id=0 WHERE id=?;", ...);
+      "UPDATE posts SET title=?, content=?, user_id=0 WHERE id=?;",...);
 } else {
     // normal path: ownership check
     sqlite3_prepare_v2(db,
-      "UPDATE posts SET title=?, content=? WHERE id=? AND user_id=?;", ...);
+      "UPDATE posts SET title=?, content=? WHERE id=? AND user_id=?;",...);
 }
 ```
 
-디컴파일이 완벽한 건 아니라 인자를 따라가면 변수에서 `-` 연산으로 값을 넣는 게 보인다.  
-이것 때문에 고생할 뻔 했다.  
+The decompilation is not perfect, but if you follow the arguments, you can see that the value is entered from the variable using the `-` operation.
+I almost had a hard time because of this.
 
-`puVarr5+0x4ff0` < 얘가 이거임 (`*(undefined4 *)(puVar5 + 0x4ff0) = param_2;`)  
-`param2`가 `uid`였으니까, `uid`가 0이면 그냥 고정적으로 관리자로서 글을 쓰게 되는 부분인 것 같다.  
+`puVarr5+0x4ff0` < This is it (`*(undefined4 *)(puVar5 + 0x4ff0) = param_2;`)
+Since `param2` was `uid`, it seems that if `uid` is 0, you will just write as an administrator on a regular basis.
 
-내가 말하고자 하는 부분을 알 거라고 생각한다.  
-그래!!! 바로 `html escape`하는 녀석이 범인이다.  
+I infer you know what I am talking about.
+The relevant transformation is the `html escape` operation.
 
 ```c
   *(undefined8 *)(puVar5 + -0x1628) = 0x104638;
@@ -198,11 +190,11 @@ if (*(int *)(puVar5 + 0x4ff0) == 0) {
   *(undefined8 *)(puVar5 + -0x1628) = 0x104648;
   html_escape(puVar2,param_4,0x6000);
 ```
-이렇게 호출됐고, 내부는  
+It was called like this, and the inside is
 
 ```c
   cVar2 = *param_2;
-  if (cVar2 != '\0') {
+  if (cVar2!= '\0') {
     uVar1 = 0;
     do {
       param_2 = param_2 + 1;
@@ -232,27 +224,27 @@ if (*(int *)(puVar5 + 0x4ff0) == 0) {
         uVar1 = uVar1 + 4;
       }
       cVar2 = *param_2;
-    } while ((cVar2 != '\0') && (uVar1 <= param_3 - 6U));
+    } while ((cVar2!= '\0') && (uVar1 <= param_3 - 6U));
     param_1 = param_1 + uVar1;
   }
   *param_1 = 0;
 ```
 
-위처럼 생겼다.  
-종료 조건은 널 바이트를 만났고, `uVar1`이 `param_3 - 6` 이하여야 한다. 이거임.  
+It looks like the above.
+The termination condition is that a null byte is encountered, and `uVar1` must be less than or equal to `param_3 - 6`. This is it.
 
-case에 따라 uVar를 `6, 1, 5, 4` 만큼 증가시키게 되어있음.  
-만약 `"`만 계속 넣어서 6의 배수로 길이를 맞춘 뒤 저 조건을 통과하게 되면  
-원하는 `html_escape(puVar2,param_4,0x6000);`를 꽉 채워 돌릴 수 있다.
-그리고 저 부분이 마지막 1바이트가 넘어가는 `Off-By-One`이셔서 뒤에 있는 게 중요한 값이면 됨.  
+Depending on the case, uVar is increased by `6, 1, 5, 4`.
+If you keep inserting only `"` to set the length to a multiple of 6 and then pass that condition,
+You can turn it by filling it with the desired `html_escape(puVar2,param_4,0x6000);`.
+This introduces a one-byte out-of-bounds write, making the adjacent field the critical target.
 
-또 그 끔찍한 스택프레임 때려 맞추기였나.. 아닌가, 이거 뒤에 변수 있었나 했더니,  
+Was it hitting that horrible stack frame again? I wondered if there was a variable behind it.
 
-`content` 버퍼가 `puVar5 + (-0x1010)`에 있는 것 아니겠는가!!!  
+Isn't the `content` buffer located at `puVar5 + (-0x1010)`!
 
-심지어 거리도 정확히 딱 `0x6000`임. **이거 말이 안됨.**  
+Even the distance is exactly `0x6000`. **This doesn’t make sense.**
 
-이럼 이제 관리자가 쓴 글로 탈@바꿈되는겨;;  
+In this way, it will now be changed to something written by an administrator;;
 
 ---
 #### XSS
@@ -262,60 +254,57 @@ if (param_2[1] == 0) {
     FUN_00105370(tmp, param_2 + 0x192, 0x1000); // html_unescape
     content_ptr = tmp;
 } else {
-    content_ptr = param_2 + 0x192;              // decode 안 함
+    content_ptr = param_2 + 0x192;              // decode No
 }
 ```
 
-`/GET`라우팅 중 게시글 정보를 가져오는 부분을 보면,  
-`uid`가 `0`인 경우 `html_unescape()`를 호출하여 조회한다.  
-즉, **Stored XSS**가 되는 셈이다.  
+If you look at the part where post information is retrieved during `/GET` routing,
+If `uid` is `0`, call `html_unescape()` to query.
+In other words, it becomes **Stored XSS**.
 
-그럼 봇이 이걸 어떻게 조회하게 할까?  
+So how do we get the bot to look this up?
 
-다시 `bot.py`를 보도록 하지.  
+Let's look at `bot.py` again.
 
 ```python
 port = sys.argv[1]
 post = sys.argv[2]
-session_id = sys.argv[3]
-...
+session_id = sys.argv[3]...
 if __name__ == "__main__":
     print(read_url(f"http://127.0.0.1:{port}/post/{post}/", FLAG, session_id))
 ```
 
-걍 플래그 가지고 실행 시 주어진 포트/포스트 조회하는 역할을 한다. 그럼 이걸 수행하는  
-기능이 `board_server` 바이너리에 있기 마련, 바로..  
+When running with a flag, it simply searches the given port/post. Then do this
+The function is bound to be in the `board_server` binary, right...
 
-`ulong submit_post_report(undefined4 param_1)` 함수에 그런 기능이 있다.  
+The `ulong submit_post_report(undefined4 param_1)` function has such a function.
 
-대충 정리해주면
+If you summarize it roughly,
 ```c
 ...
 
   __snprintf_chk(auStack_358,0x10,2,0x10,"%d",g_server_port);
   __snprintf_chk(local_348,0x10,2,0x10,"%d",param_1);
   lVar2 = create_session(0,"admin");
-  if (lVar2 != 0) {
+  if (lVar2!= 0) {
     __snprintf_chk(local_238,0x200,2,0x200,"/usr/bin/python3 /home/ctf/bot.py %s %s %s",auStack_ 358,
                    local_348,lVar2);
-    __stream = popen(local_238,"r");
-
-...
+    __stream = popen(local_238,"r");...
 ```
 
-그래서!!! 정리하면 이렇게 된다:  
+so! If you organize it like this:
 
-- POST /post/<id>/edit에서 html_escape off-by-one
-- sess_user_id를 0으로 변조
-- update_post admin 분기 진입 (user_id=0으로 저장)
-- 상세 페이지에서 html_unescape로 Stored XSS 활성화
-- report로 봇 방문 유도
-- 플래그 탈취
+- POST /post/<id>/edit to html_escape off-by-one
+- Modify sess_user_id to 0
+- Enter update_post admin branch (save as user_id=0)
+- Enable Stored XSS with html_unescape on detail page
+- Induce bot visits with reports
+- Capture the flag
 
 ---
 ## Exploit
-롸업을 쓰는 것에 있어 시간이 오래 걸리는 바람에 어쩔 수 없이 로컬에서 진행했다.  
-물론 그 때 당시 썼던 익스코드가 남아있긴 하다.  
+Since writing the review took a long time, I had no choice but to do it locally.
+Of course, the Excode used at that time still remains.
 
 ```python
 #!/usr/bin/env python3
@@ -428,7 +417,7 @@ def build_payload():
     num_quotes = (remaining - pad) // 6
     content = xss + ("A" * pad) + ('"' * num_quotes)
     total = html_encode_len(content)
-    assert total == target, f"encoded length {total} != {target}"
+    assert total == target, f"encoded length {total}!= {target}"
     return content
 
 
@@ -565,11 +554,11 @@ static int extract_session_id_from_cookie(const char *cookie, char out[65]) {
     p += 11; // strlen("session_id=")
 
     int i = 0;
-    while (*p && *p != ';' && i < 64) {
+    while (*p && *p!= ';' && i < 64) {
         out[i++] = *p++;
     }
     out[i] = '\0';
-    return (i > 0) ? 0 : -1;
+    return (i > 0)? 0 : -1;
 }
 
 void handle_client_request(int client_fd) {
@@ -583,7 +572,7 @@ void handle_client_request(int client_fd) {
     ssize_t n = recv(client_fd, raw_request_buf, 0x1fff, 0);
     if (n <= 0) goto END;
 
-    if (parse_http_request(raw_request_buf, &req) != 0) {
+    if (parse_http_request(raw_request_buf, &req)!= 0) {
         init_http_response(&resp);
         render_error_page(&resp, 400, "Wrong request.");
         send_http_response(client_fd, &resp);
@@ -592,7 +581,7 @@ void handle_client_request(int client_fd) {
 
     // 2) auth check from cookie
     int has_session = 0;
-    if (req.cookie[0] != '\0') {
+    if (req.cookie[0]!= '\0') {
         if (extract_session_id_from_cookie(req.cookie, session_id_buf) == 0) {
             has_session = (validate_session(session_id_buf, &sess) == 0);
         }
@@ -602,7 +591,7 @@ void handle_client_request(int client_fd) {
 
     // ---------------- GET ----------------
     if (!strcmp(req.method, "GET")) {
-        if (!strcmp(req.path, "/") || !strcmp(req.path, "/board")) {
+        if (!strcmp(req.path, "/") ||!strcmp(req.path, "/board")) {
             if (!has_session) set_redirect_response(&resp, "/login");
             else render_board_page(&resp, &sess);
         }
@@ -624,7 +613,7 @@ void handle_client_request(int client_fd) {
         }
         else if (!strncmp(req.path, "/post/", 6)) {
             int post_id = 0;
-            if (parse_positive_int(req.path + 6, &post_id) != 0 || post_id < 1) {
+            if (parse_positive_int(req.path + 6, &post_id)!= 0 || post_id < 1) {
                 render_error_page(&resp, 400, "Wrong post ID.");
                 goto SEND;
             }
@@ -632,9 +621,9 @@ void handle_client_request(int client_fd) {
             // /post/<id>/edit
             if (strstr(req.path, "/edit")) {
                 Post p;
-                if (fetch_post_by_id(post_id, &p) != 0) {
+                if (fetch_post_by_id(post_id, &p)!= 0) {
                     render_error_page(&resp, 404, "Post not found.");
-                } else if (p.user_id != sess.user_id) {
+                } else if (p.user_id!= sess.user_id) {
                     render_error_page(&resp, 403, "Edit failed.");
                 } else {
                     render_post_form_page(&resp, &sess, &p);
@@ -643,9 +632,9 @@ void handle_client_request(int client_fd) {
             // /post/<id>/delete
             else if (strstr(req.path, "/delete")) {
                 Post p;
-                if (fetch_post_by_id(post_id, &p) != 0) {
+                if (fetch_post_by_id(post_id, &p)!= 0) {
                     render_error_page(&resp, 404, "Post not found.");
-                } else if (p.user_id != sess.user_id) {
+                } else if (p.user_id!= sess.user_id) {
                     render_error_page(&resp, 403, "Deletion failed.");
                 } else {
                     render_delete_confirm_page(&resp, &p, &sess);
@@ -654,7 +643,7 @@ void handle_client_request(int client_fd) {
             // /post/<id> (detail)
             else {
                 Post p;
-                if (fetch_post_by_id(post_id, &p) != 0) {
+                if (fetch_post_by_id(post_id, &p)!= 0) {
                     render_error_page(&resp, 404, "Post not found.");
                 } else {
                     render_post_detail_page(&resp, &p, &sess);
@@ -672,7 +661,7 @@ void handle_client_request(int client_fd) {
             char *username = extract_form_field_value(req.body, "username");
             char *password = extract_form_field_value(req.body, "password");
 
-            if (!username || !password) {
+            if (!username ||!password) {
                 render_login_page(&resp, "Please enter your ID and password.");
             } else {
                 int uid = -1;
@@ -701,7 +690,7 @@ void handle_client_request(int client_fd) {
             char *username = extract_form_field_value(req.body, "username");
             char *password = extract_form_field_value(req.body, "password");
 
-            if (!username || !password || strlen(username) < 3 || strlen(password) < 4) {
+            if (!username ||!password || strlen(username) < 3 || strlen(password) < 4) {
                 render_register_page(&resp,
                     "ID must be at least 3 characters, password must be at least 4 characters.");
             } else if (create_user_account(username, password) == 0) {
@@ -721,7 +710,7 @@ void handle_client_request(int client_fd) {
             } else {
                 char *title = extract_form_field_value(req.body, "title");
                 char *content = extract_form_field_value(req.body, "content");
-                if (!title || !content || !title[0]) {
+                if (!title ||!content ||!title[0]) {
                     render_error_page(&resp, 400, "Please enter a title.");
                 } else if (create_post(sess.user_id, title, content) == 0) {
                     set_redirect_response(&resp, "/board");
@@ -739,12 +728,12 @@ void handle_client_request(int client_fd) {
                 set_redirect_response(&resp, "/login");
             } else {
                 int post_id = 0;
-                if (parse_positive_int(req.path + 6, &post_id) != 0 || post_id < 1) {
+                if (parse_positive_int(req.path + 6, &post_id)!= 0 || post_id < 1) {
                     render_error_page(&resp, 400, "Wrong post ID.");
                 } else if (strstr(req.path, "/edit")) {
                     char *title = extract_form_field_value(req.body, "title");
                     char *content = extract_form_field_value(req.body, "content");
-                    if (!title || !content || !title[0]) {
+                    if (!title ||!content ||!title[0]) {
                         render_error_page(&resp, 400, "Please enter a title.");
                     } else if (update_post(post_id, sess.user_id, title, content) == 0) {
                         char loc[64];
@@ -797,14 +786,12 @@ END:
 ```
 
 ---
-## 번외:
+## Extra:
 
-게을러서 이거 쓰느라 시간이 너무 걸렸다. 요새 근황은  
+It took me too long to write this because I was lazy. what is going on these days
 
-- CTF 몇 개 준비
-- 롸업 밀린 거 쓰기
-- 번외 준비
-- 이외 알려지면 좀 쿠사리 먹을 만한 것들 공부
-
-...이렇게 되었다.  
-솔직히 요즘 기강이 살짝 풀려서 이것들도 약간 밀렸다.
+- Prepare a few CTFs
+- Write down what has been missed.
+- Off-duty preparation
+- If other things become known, I will study things that are worth eating...It happened like this.
+Several related write-ups remain pending; completing them will require a more consistent review schedule.

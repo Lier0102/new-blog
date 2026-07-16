@@ -1,54 +1,51 @@
 ---
 title: "[Heap] Fastbin Dup"
 published: 2026-04-13
-description: 간단하게 heap 공부
+description: A concise experimental study of the fastbin-dup technique.
 category: HEAP
 tags: [study, heap]
 draft: false
 ---
 
 # fastbin dup
-워낙 간단한 거라 구구절절 설명하진 않을 거다.  
-적당히 이해하고 넘어가면 편하다, 그리고  
+The primitive is compact, so the discussion focuses on the allocator state transitions that make it reliable.
 
-여기선 `glibc 2.31+` 기준으로 다룰 것이다.  
-그리고, 여기선 개념보단 쓸모에 초점을 맞춘다. 솔직히 이론이 뭐가 재밌음;;  
-이전 버전은 좀 재미없기도 하고, 그냥 퍼즐 맞추는 느낌이 없다.  
-그래도 조만간 마저 올릴 예정이다.  
+Here, we will deal with the `glibc 2.31+` standard.
+The discussion prioritizes the exploit primitive and its operational constraints. Older allocator versions require a different treatment and will be analyzed separately.
 
-롸업 정리하는 도중 이 개념이 갑자기 헷갈려서 복습하는 겸 올려보기로 했다.
+While organizing the book, I suddenly became confused about this concept, so I decided to upload it to review.
 
 ---
 
-그냥 `calloc()` 등장하면 거의 이거 생각해야 하는 거긴 하다.  
-`tcache`에서 건드리지 않고 되게 건@실하게 가져오는 애라..  
+When `calloc()` appears, you almost have to think about this.
+Ae-ra brings it very healthily without being touched in `tcache`..
 
-대충 복습으로  
+By roughly reviewing
 
-1. fastbin에 보내기 위해 tcachebin 채우기
-2. 크기 적당히 만들어서 fastbin 보내기
-3. fastbin 첫 번째 거 가져와서 fd mask 얻기
-4. 청크 조작해서 쓰기
+1. Fill tcachebin to send to fastbin
+2. Make an appropriate size and send it to fastbin.
+3. Bring the first fastbin and get the fd mask
+4. Write by manipulating chunks
 
-이게 끝이다.  
-물론 상황에 따라 4번에서 조금씩 고생하긴 하지만  
-그래도 큰 틀은 같다고 보고 있다.  
+This is the end.
+Of course, depending on the situation, you may have a little trouble with number 4.
+Still, I infer the big picture is the same.
 
 ---
 
-복습할 때 사용한 문제에서는 
+In the problems used for review,
 
 - create
 - read
 - update
 - delete
 
-전형적인 `note`류의 설정을 사용했다.  
-취약점도 훤히 보였고, 그냥 이론적인 부분만 알면 풀리는 부분이랄까..  
+A typical `note` type setting was used.
+The vulnerabilities were clearly visible, and it could be solved if you just knew the theoretical part.
 
-보호기법에서 `PIE`가 꺼져 있어 더욱 더 쉬웠다.  
+It was even easier because `PIE` was turned off in the protection technique.
 
-청크 조작할 때 쓸 수 있는 곳에 넣고, `update`같은 기능 써서 그 주소에 직접 값을 넣을 수 있으니 말이다.  
+You can put it in a place where you can use it when manipulating chunks, and use a function like `update` to directly insert a value into that address.
 
 
 ---
@@ -59,43 +56,42 @@ struct note {
 };
 ```
 
-사용된 구조체?? 암튼 분석하다보니 구조체로 만들었긴 한데,  
-이렇게 생겼다.  
+Structure used? Anyway, after analyzing it, I created it as a structure,
+It looks like this.
 
-첫 8바이트는 사이즈, 그 다음 8바이트는 청크의 주소..  
-그니까 `size`만큼의 크기를 가지는 메모리의 주소를 나타낸다.  
+The first 8 bytes are the size, and the next 8 bytes are the chunk address.
+So, it represents the address of a memory with a size of `size`.
 
-코드를 분석하면 총 10개의 엔트리를 만든다는 것을 알 수 있고
-...그냥 알 수 있다.  
+If you analyze the code, you can see that a total of 10 entries are created...I can just tell.
 
-그리고 내부적으로 `get_shell` 함수도 존재하고..  
+And there is also a `get_shell` function internally.
 
-여느 문제와 같이 `delete`에서 `free()` 후에 값을 초기화하지 않는다는 점에서 취약점이 발생한다.  
+Like any other problem, a vulnerability occurs in that the value is not initialized after `free()` in `delete`.
 
 ---
 
-# 최종 익스?
+# Final ex?
 
-익스는 그럼 어케 했냐?  
+So what did Iks do then?
 
-간단하게  
-깡통 청크 0번 idx에 두고  
-1~7까지 tcachebin 채우는 용도로 쓴다.  
-8번을 fastbin으로 보내고 걔 하나밖에 없으니까  
-fd 읽어서 그대로 마스크로 쓰면 된다.  
+simply
+Put tin chunk 0 at idx
+1 to 7 are used to fill tcachebin.
+I sent number 8 to fastbin and he is the only one.
+Just read fd and use it as a mask.
 
-그럼 어디에 가짜 청크를 만드냐?  
-바로 노트 구조체 앞(bss) 쪽에 만든다. 0번이라 그 앞 -0x10에 두면  
-할당 받을 때 `note[0].ptr`, `note[1].size`를 덮게 됨.  
+So where do you create fake chunks?
+Create it right before the note structure (bss). Since it is number 0, if you put it at -0x10 in front of it,
+When allocated, `note[0].ptr` and `note[1].size` will be covered.
 
-앞에서 생략했지만 얘는 0x20으로 만들어서 썼음.  
-`note[0].size`는 그대로 0x20을 써야함. 그리고 `note[1]`은 알 바 아니고 ㅇㅇ...  
+I omitted it earlier, but this was written as 0x20.
+`note[0].size` must remain as 0x20. And `note[1]` is none of my business...
 
-여기에 **puts@GOT** 쓰고, 후에 **get_shell()** 로 바꿔서  
-메뉴 출력될 때 한 번에 실행되게 잡음.  
-당연히 `0x20`은 패딩 알아서 맞춰줌. 그냥 그래야 편함 ㅇㅇ.  
+Write **puts@GOT** here, and later change it to **get_shell()**
+It is set to run all at once when the menu is displayed.
+Of course, `0x20` automatically adjusts the padding. it is just easier that way.
 
-사용했던 코드 조각을 이해를 돕기 위해 첨부함.  
+The code snippet used is attached to aid understanding.
 
 ---
 

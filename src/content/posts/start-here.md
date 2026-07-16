@@ -1,9 +1,9 @@
 ---
-title: ㅁㄴㅇㄹ
+title: Research Notes
 published: 2026-03-31
-description: ㅁㄴㅇㄹ
+description: An index entry for ongoing technical research notes.
 tags: [Blog, Astro, GitHub Pages]
-category: 잡글
+category: Miscellaneous
 draft: false
 ---
-ㅁㄴㅇㄹㅁㄴㅇㄹㅁㄴㅇㄹㅁㄴㅇㄹ
+This section collects preliminary observations, experiments, and topics scheduled for more detailed analysis.
