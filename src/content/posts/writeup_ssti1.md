@@ -1,6 +1,6 @@
 ---
 title: "[STUDY] SSTI 문제 공부"
-published: 2026-06-21
+published: 2026-08-29
 description: 복귀겸 공부
 category: CTF
 tags: [study]
