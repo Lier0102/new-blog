@@ -1,19 +1,19 @@
 ---
 title: "[STUDY] Stack Pivot"
 published: 2026-09-07
-description: 간단한 스택 옮기기 연습
+description: A quick stack pivot exercise
 category: CTF
 tags: [study]
 draft: false
 ---
 
 # Stack Pivot?!
-오랜만에 드림핵에서 validator_revenge를 풀다가 문득,  
-내가 스택 굽는 방법에 대해 기억하지 못한다는 사실을 깨달았다.  
+While solving `validator_revenge` on Dreamhack after a long break, it suddenly hit me:  
+I'd forgotten how to bend the stack.  
 
-이번 글에선 **Stack Pivot**에 대해 간단히 알아보겠다.
+In this post, I'll take a quick look at **Stack Pivot**.
 
-# 바이너리 정보
+# Binary Information
 ```bash
 $ file pivot
 pivot: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=0e9fb878206e1858b042597fd36c51aa07497121, not stripped
@@ -38,33 +38,33 @@ $ checksec --file=./pivot
     Stripped:   No
 ```
 
-제공된 설명은 다음과 같다.
+The provided description reads as follows.
 > Important!
 This challenge imports a function named foothold_function() from a library that also contains a ret2win() function.
 
-바로 IDA로 열어보겠다.  
+Let's open it in IDA right away.  
 <a href="https://ibb.co/LzwXnLHd"><img src="https://i.ibb.co/7Jcd2wLt/Screenshot-2026-09-07-at-9-26-10-AM.png" alt="Screenshot-2026-09-07-at-9-26-10-AM" border="0"></a>
 
 <a href="https://ibb.co/B2M9MZyC"><img src="https://i.ibb.co/4RrHrT8V/Screenshot-2026-09-07-at-9-28-18-AM.png" alt="Screenshot-2026-09-07-at-9-28-18-AM" border="0"></a>
 
-`main()`, `pwnme()`를 사진에서 볼 수 있다.  
-정상적인 흐름으론 얘네 둘만 호출된다.  
+`main()` and `pwnme()` can be seen in the screenshots.  
+These are the only two called during normal execution.  
 
 <a href="https://ibb.co/XfWSJyG9"><img src="https://i.ibb.co/vCcZzsMb/Screenshot-2026-09-07-at-9-29-45-AM.png" alt="Screenshot-2026-09-07-at-9-29-45-AM" border="0"></a>
 
-`Imports`에 `foothold_function()`이 있는 걸 볼 수 있다. 설명에서 거짓말 한 게 아니었다.  
+We can see `foothold_function()` under `Imports`. The description wasn't lying.  
 
 <a href="https://ibb.co/yc4kfFX6"><img src="https://i.ibb.co/YF0dRB3c/Screenshot-2026-09-07-at-9-33-22-AM.png" alt="Screenshot-2026-09-07-at-9-33-22-AM" border="0"></a>
 
-`ret2win()`함수도 마찬가지로 존재한다.  
+The `ret2win()` function is there as well.  
 
-호출된 적 없는 쪽이니까, `Import` 되어있는 `foothold_function()`을 호출하면 된다.  
-그 다음 `.got.plt` 엔트리에 등록이 되면 `foothold_function()`의 실제 주소를 읽을 수 있게 된다, 음..  
-이 함수의 `.got`이 가리키는 주소를 읽어 이 주소에 `ret2win()`의 주소와 차이(오프셋)를 더해 실행 흐름을 이리로 이동시킨다.
+Because `foothold_function()` has not been called yet, we first need to call the imported function.  
+Once the dynamic linker resolves its `.got.plt` entry, we'll be able to read the actual address of `foothold_function()`, hmm..  
+Then we can read the address in that GOT entry, add the offset from `foothold_function()` to `ret2win()`, and redirect execution there.
 
 <a href="https://ibb.co/ns92wFCw"><img src="https://i.ibb.co/TB6XwsLw/Screenshot-2026-09-07-at-10-13-40-AM.png" alt="Screenshot-2026-09-07-at-10-13-40-AM" border="0"></a>
 
-첫 입력에서 피벗할 주소에 값을 넣게 해준다. 또 주소를 출력해주기 때문에 기억해뒀다가  
-bof할 때 pivot 주소를 rsp에 넣어주면 된다. `pop rax` + `xchg` 가젯으로 이것이 가능하다.
+The first input lets us write data at the address we'll pivot to. It also prints that address, so keep it handy,  
+then load the pivot address into `rsp` during the BOF. The `pop rax` + `xchg` gadgets make this possible.
 
-오랜만에 하는 거라 몇 번씩 익스코드가 뒤바꼈다. LLM 박사님들께서 너무 똑똑해지신 바람에..
+It had been a while, so my exploit code went through several revisions. Those LLM wizards have gotten way too smart..

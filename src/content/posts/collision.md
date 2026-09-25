@@ -1,22 +1,22 @@
 ---
 title: "[pwnable.kr] collision"
 published: 2026-09-23
-description: 워게임 풀기
+description: Solving a wargame challenge
 category: CTF
 tags: [pwnable.kr, study]
 draft: false
 ---
 
-# 해시 충돌
-우연/고의로 서로 다른 두 값을 넣었지만 해시 함수가 두 입력에 대해 같은 결괏값을 반환하는 상황.  
-문제는 `collision`이다.
+# Hash Collision
+A hash collision occurs when two different inputs—whether by accident or design—produce the same hash.  
+The challenge is `collision`.
 
-# 풀이
+# Solution
 
-`check_password` 함수를 통과한 결과가 `0x21DD09EC`인 입력을 구해야 한다.  
-`const char`로 전달 받은 값을 `int`로 변환한 뒤 이 값을 더해 `res`가 결정된다.  
-따라서, `res`가 `0x21DD09EC`인 입력을 역으로 찾으면 된다.  
-여러 가지가 있을 수도 있다고 생각한다. 여기선 `check_password`를 역으로 설계해 구했다.  
+We need an input that produces `0x21DD09EC` after passing through `check_password`.  
+The buffer passed in as a `const char *` is reinterpreted as an `int *`, and the five integers are added together to determine `res`.  
+Therefore, we can work backward to find an input that makes `res` equal to `0x21DD09EC`.  
+There are probably several valid inputs. Here, I found one by reversing the logic of `check_password`.  
 ```c
 // check_password
 unsigned long hashcode = 0x21DD09EC;
@@ -24,7 +24,7 @@ unsigned long check_password(const char* p){
 	int* ip = (int*)p;
 	int i;
 	int res=0;
-	// 4바이트씩 5번
+	// Five 4-byte chunks
 	for(i=0; i<5; i++){
 		res += ip[i];
 	}
@@ -32,7 +32,7 @@ unsigned long check_password(const char* p){
 }
 ```
 
-5번 나눴으니, 이걸 다시 5번 더하면 되는 지 확인하고자 보면:  
+Since the value is split across five additions, I checked whether adding the quotient five times would work:  
 ```py
 ✗ python3
 Python 3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.1.1.101)] on darwin
@@ -45,10 +45,10 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 ```
 
-이런 이유로 `0x21DD09EC // 0x5`를 구한 뒤 이 값에 `4`만큼 곱한다.  
-바로 그 값에 `0x21DD09EC // 0x5 + 0x21DD09EC % 0x5`를 더하면 된다.  
+Because of this, calculate `0x21DD09EC // 0x5`, then use that value four times.  
+Then use `0x21DD09EC // 0x5 + 0x21DD09EC % 0x5` for the last value.  
 
-아래와 같이 확인했다.  
+I verified it as follows.  
 ```c
 // solve.c
 #include <stdio.h>
@@ -81,9 +81,9 @@ int main(int *argc, char **argv) {
 }
 ```
 
-해당 서버에 (현재 기준 `nc pwnable.kr 10002`) 에 접속하고 파이썬 스크립트 실행해주면 된다.
+Connect to the server (`nc pwnable.kr 10002` as of this writing), then run the following command.
 ```py
 ./col "$(python3 -c 'import struct, sys; q, r = divmod(0x21DD09EC, 5); sys.stdout.buffer.write(struct.pack("<I", q) * 4 + struct.pack("<I", q + r))')"
 ```
 
-재밌었다
+That was fun.

@@ -1,28 +1,28 @@
 ---
-title: "[STUDY] SSTI 문제 공부"
+title: "[STUDY] Studying an SSTI Challenge"
 published: 2026-08-29
-description: 복귀겸 공부
+description: Getting back into wargames with some SSTI practice
 category: CTF
 tags: [study]
 draft: false
 ---
 
 # SSTI ?!
-웹해킹, 이렇게 말하면 멋이 살지 않는다..  
-그래서 그냥 웹 분야에 관심이 생겼다고 말하겠다.  
+Calling it "web hacking" doesn't sound all that cool..  
+So I'll just say I've taken an interest in web security.  
 
-워게임을 못 푼지 어언 한 달 하고 며칠 쯤 되었다..
-그런 이유로 그냥 풀어본 워게임에 대해 풀이를 정리하고자 한다.  
-문제의 출처라던가 밝힐 생각은 없다. 재미만 있으면 된 거 아닌가? 적어도 이건,,
+It's been a little over a month since I last solved a wargame..
+So I decided to write up one I worked through.  
+I don't plan to reveal where the challenge came from. As long as it's fun, what else matters? At least for this one,,
 
-# 요약
-외부 사용자 -> WAF -> Flask App  
-위처럼 동작하는 서비스가 있다.  
+# Summary
+External user -> WAF -> Flask App  
+There is a service with the flow shown above.  
 
-이건 뭐 서사가 중요하지 않으니 걍 스포하겠다.  
-Jinja2 template rendering 이 주제인 SSTI다.
+The story isn't important here, so I'll just spoil it.  
+It's an SSTI challenge about Jinja2 template rendering.
 
-구체적인 그림은 아래와 같다:  
+A more concrete diagram looks like this:  
 ```
 client
   │ TCP/8080
@@ -36,29 +36,29 @@ aiohttp /preview
 Jinja2 template rendering
 ```
 
-`app.py` 에서 취약한 부분을 찾고, `WAF` 에선 그저 가능한 예시 중 몇 개가 탐지 규칙으로 존재하므로
-그 항목들이 페이로드의 요소 내부에 있지 않게 작성하면 된다.
+Find the vulnerable part in `app.py`. Since the `WAF` checks only a small set of patterns,
+you just need to craft a payload that contains none of them.
 
-# 구체적인 exploit
+# Exploit Details
 ### 1.
 
-`app.py`에
+`app.py` contained
 ```py
 source = body.decode("utf-8")
 rendered = jinja_env.from_string(source).render()
 ```
-가 있었고 (try랑 except로 존재하긴 하는데, 그냥 위에서 아래로 나열되어 있어 위 코드와 의미상 동등, 예외 처리 내용만 제외했을 경우.)
+(The real code wrapped this in `try`/`except`, but without the exception handling, its behavior is equivalent to the two lines above.)
 
-`Dockerfile`에 적힌 플래그 위치는 다음과 같았다:  
+The flag location written in the `Dockerfile` was as follows:  
 ```Dockerfile
 COPY flag /flag
 RUN chmod 444 /flag
 ```
 
-`waf_guard`를 적당히 스피드런 하듯 정적 분석 끝내고  
-IDA로 recv쪽 **xref** 따라가며 분석했다.  
+After speedrunning some static analysis of `waf_guard`,  
+I followed the **xrefs** to `recv` in IDA.  
 
-이유는  
+The reason was that  
 ```bash
 socket, bind, listen, accept, connect
 poll, recv, send, close
@@ -66,69 +66,69 @@ fork, waitpid
 memcpy, strtol
 ```
 
-이런 키워드가 `strings`로 잡혔는데, `WAF`니까, 음, `Dockerfile`이나 **제공된 posix 스크립트 파일**을 확인한 결과로
-`recv` 부분에서 어떻게 넘어가게 할까, 를 고민해야 한다,, 라는 점을 확신할 수 있다.  
-`bind`, `listen`, `accpet` 이런 것들은 후순위,, 일 수 밖에 없다.  
+`strings` turned up keywords like these. Given that this was a `WAF`, and based on the `Dockerfile` and the **provided POSIX shell script**,
+it was pretty clear that the real question was how to get past the code around `recv`,,  
+Things like `bind`, `listen`, and `accept` could only come later,,  
 
-이유는 설명하지 않겠다. 이건 쉽게 찾을 수 있는 잡지식이기도 하니,
+I won't explain why. It's the kind of background knowledge you can easily look up,
 
 ### 2.
-`IDA`로 둘러본 결과는 이러했다.
-| 주소 | 역할 |
+This is what I found while looking around in `IDA`.
+| Address | Role |
 |---|---|
-| `0x1289` | 입력과 하나의 인코딩된 blacklist 패턴 비교 |
-| `0x12C6` | 모든 입력 위치에서 12개 blacklist 탐색 |
-| `0x13E4` | listen socket 생성 |
-| `0x1545` | upstream 연결 |
-| `0x15F5` | 스트리밍 WAF 검사 및 이전 15바이트 보관 |
+| `0x1289` | Compare the input against one encoded blacklist pattern |
+| `0x12C6` | Search for all 12 blacklist patterns at every input position |
+| `0x13E4` | Create the listen socket |
+| `0x1545` | Connect to the upstream server |
+| `0x15F5` | Perform streaming WAF inspection and preserve the previous 15 bytes |
 | `0x173E` | `send_all` |
-| `0x17B2` | `poll()` 기반 양방향 relay |
+| `0x17B2` | `poll()`-based bidirectional relay |
 | `0x18FE` | `main` |
 
-자세히 상술하진 않고 넘어가겠다. 아무래도 이번 건 내 손으로 푼 게 아니라고 봐야하기 때문이다.  
-여느 기초 리버싱 문제마냥 `XOR` 연산으로 값을 비교해 나간다.  
-**입력 버퍼**, 그리고 **블랙리스트**를 비교한다.  
+I won't spell it all out in detail and will move on. After all, I should probably admit I didn't solve this one entirely by myself.  
+Just like your typical basic reversing challenge, it compares values using an `XOR` operation.  
+It compares the **input buffer** against the **blacklist**.  
 
-`블랙리스트`, 라고 해서 특별한 건 아니다.  
-그냥 테이블, 느낌의 그대로다.  
-`0x20e0` 부터 `0x21ac`까지 이어지는데, `stride`, 어, 한 칸 당 17바이트다.  
-첫 번째에 데이터 크기, 그 뒤 데이터, 또 마지막으로 패딩,,
+The `blacklist` itself is nothing special.  
+It's just a table, pretty much exactly what you'd imagine.  
+It runs from `0x20e0` to `0x21ac`, with a `stride` of, uh, 17 bytes per entry.  
+The length comes first, then the data, and finally the padding,,  
 
-**보기 쉬운 c언어 구조체** 로 나타내면 이렇다.  
+In the form of an **easy-to-read C struct**, it looks like this.  
 ```c
 struct pattern_entry {
     uint8_t length;
     uint8_t encoded[16];
 };
 ```
-`LLM` 께선 `IDAPython`을 사용하셔서 복호화, 하셨다고..한다.  
-멋있어 보이니까 나도 배워봐야겠다. 물론 복사 + 붙여넣기 적당히 작성은 가능하다.  
-근데 뭔가, 기능을 잘 쓰는 것 같지가 않다, 예전엔 이게 멋있었는데..
+The almighty `LLM` apparently used `IDAPython` to decrypt it..  
+It looks cool, so I should learn it too. Of course, I can cobble something together with enough copying + pasting.  
+But somehow, it doesn't feel like I'm really using the feature properly. Back then, I thought this sort of thing looked cool..
 
-결과는 어떻게 나왔는지 적지 않겠다.  
-그저 당연히 `{{`와 `}}`도 필터 대상에 포함되었다고만 언급하겠다.  
+I won't write down what the results were.  
+I'll just mention that, naturally, `{{` and `}}` were also included in the filter.  
 
 ### 3.
-`2`번에서 얘기한 것처럼, 대부분의 `SSTI`에 쓰이는 내용이 막혀버린 바람에 `TCP Payload`를 여러 차례 나눠 보내는 방법에 대해 생각해 볼 수 있다.
-근데 `WAF`가 생각보다 똑똑하다. 아무리 나눈다 가정해도, 전송 직전 15바이트와 결합하는 부분이 있어  
-결국엔 걸린다...  
+As I mentioned in section `2`, most of the usual `SSTI` syntax was blocked, so one option is to split the `TCP Payload` across multiple sends.
+But the `WAF` is smarter than expected. No matter how much you split it up, it combines each chunk with the previous 15 bytes right before forwarding it, so  
+you get caught in the end...  
 
-문제의 제목과 관계있는 부분에서의 취약점이 있었다.  
-`WAF`는 원시,, 있어보이는 말로 `wire bytes`를 검사하는데,  
-`app.py`에선 `aiohttp`로, `HTTP chunk framing`을 제거 후 애플리케이션에 `body`를 제공한다.  
+There was a vulnerability in the part related to the challenge title.  
+The `WAF` inspects the raw—or, to make it sound fancy, the `wire bytes`—  
+while `app.py` uses `aiohttp`, which removes the `HTTP chunk framing` before passing the `body` to the application.  
 
-용어를 찾아볼 필요 없이 이건 예시로 설명하겠다.  
+No need to look up the terminology; I'll explain it with an example.  
 ```text
 1\r\n{\r\n
 1\r\n{\r\n
 0\r\n\r\n
 ```
-위 내용을 보내면  
-`WAF`는 원시 내용을 그대로 보게 된다. 그래서 `{{` 및 `}}`가 아니니 탐지하지 않는다.  
-`aiohttp`가 **dechunk**한 값은 반면에 `{{` 그리고 `}}`가 된다.  
+If you send the above,  
+the `WAF` sees the raw content as-is. Since it isn't `{{` or `}}`, it doesn't detect anything.  
+The value **dechunked** by `aiohttp`, on the other hand, becomes `{{` and `}}`.  
 
-이 점으로 `WAF`가 가진 어떤 블랙리스트의 요소도 하나 걸리지 않고 공격이 가능해진다.
-아무래도 이걸 나중에,, 쓰거나(?) 아무튼 편의를 위해서라던가 함수화, 하면 아래처럼 구현이 가능할 것 같다.  
+This makes it possible to attack without matching any of the `WAF`'s blacklist patterns.
+I might use this later,,(?) Anyway, for convenience, I think it could be wrapped in a function like this.  
 
 ```python
 def one_byte_chunks(data: bytes) -> bytes:
@@ -138,31 +138,31 @@ def one_byte_chunks(data: bytes) -> bytes:
     ) + b"0\r\n\r\n"
 ```
 
-주의(?)할 점으로 `http` 요청은 `Content-Length`만이 아닌 다음처럼 생겨야 한다.  
+One thing to watch(?) is that the `HTTP` request cannot use `Content-Length` alone; it needs headers like these.  
 ```http
 Content-Type: text/plain
 Transfer-Encoding: chunked
 Connection: close
 ```
 
-### 4. 결과
-익스코드는 적지 않겠다 ㅋㅋ, 요약도 하던가 ,, 하려 했는데  
-이러면 너무 특정되어 버릴 것 같다. 자존심 상한다, 무슨 이유인진 모르겠지만 그냥 그렇다.  
-결과는
+### 4. Result
+I won't include the exploit code lol. I was going to include a summary too,, but  
+that would make the original challenge way too easy to identify. That hurts my pride; I don't know why, but it just does.  
+The result is
 ```text
 HTTP/1.1 200 OK
 Content-Type: text/plain; charset=utf-8
 Content-Length: 53
 Server: Python/3.11 aiohttp/3.9.5
 
-FLAG{우디온의 불은 꺼트렸다}
+FLAG{I put out the fire in Woodion}
 ```
-뭐 이런식으로 잘 나온다.
-... 플래그 내부 내용은 좋아하는 만화의 명대사다, 뭐라도 넣을까 싶어 삽입했다.
+The response comes back just fine, like this.
+... The text inside the flag is a famous line from a comic I like. I needed some placeholder text, so I used that.
 
 
-### 5. 느낀 점
-초등학생, 어쩌면 그 이전부터 이런 칸을 작성할 때 귀찮다고 생각했다.  
-그래서,, 음,  
-모던워페어 4 생각보다 멀티가 재밌다. 캠페인은 이후 완성될 것 같기도 하고, 그래서 오픈 베타인 지금은 하지 않고 있다.  
-끝.
+### 5. Thoughts
+I've found sections like this annoying to fill out since elementary school, maybe even earlier.  
+So,, uh,  
+Modern Warfare 4's multiplayer is more fun than I expected. The campaign looks like it will only be completed later, so I'm leaving it alone during the open beta.  
+The end.
