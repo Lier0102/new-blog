@@ -158,7 +158,6 @@ hit breakpoint at: 0x5bb52253622f
 ## 랜덤값 보기22
 
 ```python
-# 나는 안 씀 이런 거.py
 python3 -c "import ctypes; libc = ctypes.CDLL('libc.so.6'); libc.srand(1); print(hex(libc.rand()))"
 ```
 
