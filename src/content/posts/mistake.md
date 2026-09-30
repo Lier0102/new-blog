@@ -8,13 +8,13 @@ draft: false
 ---
 
 # mistake
-이상하리만치 취약한 부분이 보이지 않았다.  
-연산자 우선순위가 주제라니, 당황스럽다.  
-프로그래밍기능사 필기에서 볼 것 같은 내용이었다. 그래도 익숙한 함수여서 다행이지 참;;  
+I couldn't find any obvious vulnerability, which was almost unsettling.  
+The fact that the challenge was about operator precedence caught me off guard.  
+It felt like something you'd see on a basic programming certification exam. At least it involved a function I recognized...  
 
-너무 조건문을 대충대충 봤다. 유심히 봤다면 더 빨리 풀지 않았을까, 생각한다.  
+I skimmed the conditionals way too casually. If I'd paid closer attention, I might have solved it sooner.  
 
-# 코드 분석
+# Code Analysis
 ```c
 ...
 #define PW_LEN 10
@@ -65,30 +65,29 @@ int main(int argc, char* argv[]){
 }
 ```
 
-## 부연 설명
-의외로 중요한 부분만 남은 코드라 생략할 게 그다지 없었다. 아니면 내가 아직 바보인 걸지도..  
-볼 수 있듯이 입력에선 문제가 없다. 첫 `if`문에서 오류가 생긴다.  
+## A Closer Look
+Surprisingly, the snippet already contains only the parts that matter, so there isn't much to leave out. Or maybe I'm still an idiot...  
+As you can see, the input itself isn't the problem. The mistake is in the first `if` statement.  
 `if(fd=open("/home/mistake/password",O_RDONLY,0400) < 0)`.  
 
-**연산자 우선순위**에 따르면 `비교 연산자`인 `<`가 `대입 연산자`인 `=`보다 우선시된다.  
-따라서 `open()`의 반환값을 우선 알아야 한다.  
+According to **operator precedence**, the comparison operator `<` takes priority over the assignment operator `=`.  
+So first, we need to know what `open()` returns.  
 
-그래야 조건문이 어떻게 돌아갈 지 알겠지, `unix C`라 `man`으로 확인할 수 있는 건 다 알 거라 생각한다.  
-궁금하면 아래 링크에 가서 봐도 될 듯  
+That tells us how the condition behaves. Since this is Unix C, I assume most readers know they can check these things with `man`.  
+If you're curious, the manual is here:  
 `https://man7.org/linux/man-pages/man2/open.2.html`
-대충 `fd`에는 3이 들어갈 것으로 보인다.  
+The call to `open()` should return 3.  
 
-`stdin`, `stdout`, `stderr`의 파일 디스크립터는 각각 0, 1, 2이기 때문이지,, 그냥 말하고 싶었다.  
+That's because the file descriptors for `stdin`, `stdout`, and `stderr` are 0, 1, and 2, respectively. I just wanted to mention that...  
 
-어쨌거나, 그럼 `open()`은 3을, 못해도 0보다 큰 값을 반환할 것이고, 비교 후  
-0보다 작지 않으므로 거짓을 넘기고, 결국 `if`문이 실행되지 않고 넘어가게 된다.  
+Anyway, `open()` should return 3—or at least a value greater than zero. The comparison is therefore false, and its result (`0`) is assigned to `fd`; the `if` body is skipped and execution moves on.  
 
-# 풀이
-앞선 내용을 정리하면 `pw_buf`에 우리가 원하는 원본 비번을 넣을 수 있고,  
-비교에 포함될 `pw_buf2`의 값에도 그러한 값을 넣을 수 있다.  
+# Solution
+Putting that together, we can put the original password we want into `pw_buf`,  
+and put the same value into `pw_buf2`, which is used in the comparison.  
 
 +)  
-다른 부분은 너무나 간단하여 딱히 설명하지 않았다.  
+The rest is straightforward enough that I didn't think it needed more explanation.  
 
 ```py
 from pwn import *
@@ -132,7 +131,7 @@ p.interactive()
 [*] pass: b'BANKAIAAAA'
 [*] Switching to interactive mode
 Password OK
-{대충검열}
+{sort of censored}
 [*] Got EOF while reading in interactive
 $ 
 [*] Interrupted

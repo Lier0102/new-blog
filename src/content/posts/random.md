@@ -7,9 +7,9 @@ tags: [pwnable.kr, study]
 draft: false
 ---
 
-# 랜덤하지 않은 랜덤 문제
+# The Not-So-Random Random Challenge
 
-바이너리 정보는 아래와 같다.
+Here is the binary information.
 
 ```bash
 arch     x86
@@ -42,7 +42,7 @@ subsys   linux
 va       true
 ```
 
-## 코드
+## Code
 
 ```c
 #include <stdio.h>
@@ -66,15 +66,15 @@ int main(){
 }
 ```
 
-# 풀이
+# Solution
 
-문제가 간단하고, 검색 없이 바로 풀렸기 때문에 여기서 설명하겠다.  
-`rand()` 호출 전에 `srand()`로 시드를 설정하지 않았기 때문에 `1`로 시드가 고정된다.  
-따라서 `rand()`를 호출해도 항상 같은 값이 반환된다.  
-그러므로 `gdb` 또는 `r2`로 실행 도중 `random` 변수의 값을 확인한 뒤 이 값을 `0xcafebabe`와 XOR한다.  
-이러면 올바른 `key`값을 구하게 된다.
+The challenge is simple, and I solved it without looking anything up, so I'll explain it here.  
+Because the program never calls `srand()` before `rand()`, the seed defaults to `1`.  
+That means `rand()` returns the same value every time.  
+So, use `gdb` or `r2` to inspect `random` while the program is running, then XOR it with `0xcafebabe`.  
+That gives us the correct `key`.
 
-## 짤막한 r2 사용
+## A Quick Look at r2
 
 ```bash
 [0x74961b01c540]> aaa
@@ -152,20 +152,20 @@ hit breakpoint at: 0x5bb52253622f
 [0x5bb52253622f]>
 ```
 
-별로 큰 값이 아닌 것 같아서 습관적으로 `eax` 값을 확인했다.  
-추가로, 동적 디버깅 대신 간단한 스크립트를 작성한다고 치면 아래와 같이:
+The value didn't look particularly large, so out of habit I checked `eax`.  
+Also, if you wanted to write a quick script instead of debugging dynamically, you could do this:
 
-## 랜덤값 보기22
+## Checking the Random Value
 
 ```python
 python3 -c "import ctypes; libc = ctypes.CDLL('libc.so.6'); libc.srand(1); print(hex(libc.rand()))"
 ```
 
-`cyptes` 라이브러리 가져와서 해당 바이너리와 알맞는 `libc.so.6` 확보 후 돌려보면 된다.  
-적당히 둘러 말하자면 아무 **linux**에서 실행하고 그 값을 원격에도 넣으면 된다.  
-보통 `0x6b8b4567`가 나온다.
+Load the `ctypes` library, make sure you have a `libc.so.6` that matches the binary, and run it.  
+To put it loosely, you can run this on any **Linux** machine and submit the value to the remote service.  
+Usually, it will be `0x6b8b4567`.
 
-## 익스
+## Exploit
 
 ```python
 from pwn import *
@@ -183,34 +183,34 @@ p.sendline(str(sol).encode())
 p.interactive()
 ```
 
-이번에 코드 짜면서 뭐랄까 약간 인공지능이 된 느낌을 받았다.  
-혼자 자만심에 기뻐하고 있다가 `claude` << (안 쓰는데 agy에 있길래 opus 4.6 오랜만에 써 봄)에게 수정점을 물어봤다.
+While writing the code, I started to feel a little like an AI.  
+I was getting carried away, pleased with myself, so I asked `claude` << (I don't normally use it, but it was in agy, so I tried Opus 4.6 again after a long while) for suggestions.
 
-그런데,,,
+And then...
 
 ```py
 from pwn import *
 import ctypes
 
-# ── 설정 ──
+# ── Configuration ──
 HOST, PORT = 'pwnable.kr', 10005
 TARGET_HASH = 0xcafebabe
 
 context.log_level = "info"
 
-# ── rand() 시뮬레이션 (srand 미호출 = srand(1)) ──
-# libc 없이도 glibc 기본 시드의 첫 번째 rand() 값은 고정
+# ── rand() simulation (no srand() call means srand(1)) ──
+# The first rand() value with glibc's default seed is fixed, even without libc.
 RAND_DEFAULT_SEED1 = 0x6b8b4567  # libc.srand(1); libc.rand()
 
 def solve(rand_val: int, target: int) -> int:
-    """XOR 역산으로 key 계산. signed 32-bit로 변환."""
+    """Calculate the key by reversing the XOR; convert it to signed 32-bit."""
     key = target ^ rand_val
-    # unsigned → signed 32-bit 변환
+    # unsigned → signed 32-bit conversion
     if key >= 0x80000000:
         key -= 0x100000000
     return key
 
-# ── 익스플로잇 ──
+# ── Exploit ──
 key = solve(RAND_DEFAULT_SEED1, TARGET_HASH)
 log.info(f"rand() = {hex(RAND_DEFAULT_SEED1)}")
 log.info(f"key    = {key} ({hex(key & 0xFFFFFFFF)})")
@@ -220,6 +220,6 @@ p.sendline(str(key).encode())
 p.interactive()
 ```
 
-어음,, 범용적이다. 뭐랄까, 그 분위기 휩쓸려서 쓰는 코드 느낌.  
-누가 이런 걸 가르친 지는 모르겠다. 그래도 어느 정도 생각하면서 스크립트라던가 짜야 하지 않는가  
-라고 나를 되돌아보게 된 것 같다.
+Well... it's pretty generic. It feels like the kind of code you write when you get swept up in the whole vibe.  
+I don't know who teaches people to write like this. Still, shouldn't we put some thought into the scripts we write?  
+It made me reflect on how I write my own.

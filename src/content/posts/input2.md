@@ -8,10 +8,10 @@ draft: false
 ---
 
 # input2
-이번 문제는 다른 입력값 비교 문제와 같았다.  
-다만, 수단이 여러 가지라 배울 게 많았다.  
+This was much like the other challenges that check your input values.  
+There were several different ways to provide the inputs, though, so I learned quite a bit.  
 
-# 파일 정보 보기
+# Binary Information
 ```bash
 $ rabin2 -I ./input2
 arch     x86
@@ -44,12 +44,12 @@ subsys   linux
 va       true
 ```
 
-딱히 이상한 건 없다. 적당히 입력값이나 잘 넣으라는 의도로 파악했다.  
+Nothing looks unusual. I took it as a hint to just get the inputs right.  
 
-## 코드도 보기
+## Looking at the Code
 
-필요한 부분만 최대한 담아봤다.  
-검사하는 부분들이다.
+I kept only the parts that matter.  
+These are the checks the program performs.
 ```c
 ...
 // input2.c
@@ -105,22 +105,21 @@ int main(int argc, char* argv[], char* envp[]){
 }
 ```
 
-워낙 `python`을 쓰는 게 간단한 스크립트 만들거나 `ctf`, 간단한 문제 풀 때밖에 없었다. 최근엔,,  
-그런 이유로 `pwntools`만 써서 어떻게 풀다 생각하다가 머리가 뜨거워졌다.  
+I'd mostly used Python for simple scripts, CTFs, and small problems. Lately, tho...    
 
-파이썬 스크립트는 `nc`로 서버에 접속한 뒤 직접 실행이 되니까 딱히 더 생각할 필욘 없고,  
-실행 인자는 `pwntools`에 있는 `process()`로 객체 만들 때 넣는 인자로 적당히 넣으면 된다.  
+The Python script runs directly after connecting to the server with `nc`, so there isn't much else to think about there.  
+For the program's arguments, I could pass them when creating the process with `pwntools`'s `process()`.  
 
-`stdin`, `stderr`로 입력을 받는 부분은 `os` 라이브러리로 해결하면 되고,  
-`env` 또한 `pwntools`에 있는 `process()`로 넣을 수 있다.  
+I could handle input through `stdin` and `stderr` with the `os` library,  
+and pass `env` to `process()` from `pwntools` as well.  
 
-아, 중간에 `socket` 처리 부분을 못 봐서 고생했다. `argv['C']`에 저장된 포트로 소켓 통신을 한다.  
-뒤늦게 고쳤다..  
+I got stuck because I missed the socket-handling part in the middle. It connects to the port stored in `argv['C']`.  
+I only fixed that later...  
 
-돌고 돌아 정리하자면 시나리오는 이랬다:  
+After going in circles, here's the flow I ended up with:  
 
 ```text
-// 또 markdown 'text' 이런 언어로 달아두면 인공지능이 넣었다고 그러겠지만 그렇진 않습니다
+// If I label this as Markdown 'text', people might say an AI added it, but it didn't.
 1. p = process(
     argv = args,
     stdin = r_stdin,
@@ -128,11 +127,11 @@ int main(int argc, char* argv[], char* envp[]){
     env=env_
 )
 
-2. 소켓은 짜피 그 서버에 접속 후 로컬에서 돌아가니 127.0.0.1로 들어가고
-s.send(b'\xde\xad\xbe\xef') 로 해결!
+2. The socket runs locally on the server, so connect to 127.0.0.1
+and handle it with s.send(b'\xde\xad\xbe\xef')!
 ```
 
-# 풀이
+# Solution
 ```py
 import os; import time; import socket
 from pwn import *
@@ -174,5 +173,5 @@ s.close()
 p.interactive()
 ```
 
-오랜만에 스택오버플로우에서 검색도 해봤다. 나 좀 고수인듯;;  
-그러고 보니 요즘엔 스택오버플로우 쓰는 놈들이 있을까 의문이다,,,
+I even looked something up on Stack Overflow for the first time in a while. I'm kind of a pro now, huh...  
+Then again, wondering if anyone still uses stack overflow these days...

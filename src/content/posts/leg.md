@@ -7,19 +7,19 @@ tags: [pwnable.kr, study]
 draft: false
 ---
 
-# arm32 읽기
-이번에 풀면서 `arm32`와 `arm64`의 어셈블리 차이가 기억이 나지 않는다는 점을 알게 되었다.  
-검색했다, 그 결과 그냥 32비트는 r??계열 레지스터, 64비트는 x??계열 레지스터를 쓰는 것으로 보인다.  
-아니면 말고, 나중에 알게 되겠지. 우선은 이렇다.
+# A Quick Look at ARM32
+While working through this challenge, I realized I couldn't remember the assembly differences between `arm32` and `arm64`, fr  
+I looked it up; apparently, 32-bit ARM uses the `r`-series registers, while 64-bit ARM uses the `x`-series.  
+could be wrong. I guess I'll find out eventually; that's my understanding for now.
 
-# 풀이
+# Solution
 
-### 어셈블리
-`key1()`, `key2()`, `key3()` 함수의 각 반환값을 더하여 내 입력값과 동일한 지 비교한다.  
-다르면 플래그를 못 읽는다.  
-따라서 첨부파일에 있는 `leg.asm`을 읽어보고, 각 값의 합을 알아내어 입력하면 된다.  
+### Assembly
+The program adds the return values from `key1()`, `key2()`, and `key3()`, then compares the sum with the value I typed.  
+If they don't match, it won't show the flag.  
+So, read the attached `leg.asm`, work out the sum, and enter it.  
 
-입력은 10진 정수로 해야 한다.  
+The input must be a decimal integer.  
 
 ```asm
 ...
@@ -67,27 +67,26 @@ Dump of assembler code for function key3:
 End of assembler dump.
 ```
 
-중요한 부분만 담았다. `arm32`다.  
-아무튼, 어셈블리 읽을 줄만 안다면 해당 문제에서 `arm`에 관련해선 `lr`, `r0`, `pc`.  
-위 세 레지스터의 동작 방식에 대해서만 인지하면 충분하다. 고 본다.  
+These are just the parts that matter. This is `arm32`.  
+Anyway, if you can read assembly(i hope so), I think you only need to understand three ARM registers for this challenge: `lr`, `r0`, and `pc`.  
 
-- `lr`은 돌아갈 주소, `return address`를 저장한다.  
-- `r0`은 함수의 반환값, `rax` 격의 느낌이다.  
-- `pc`는 다음에 실행될 명령어 주소, 그러나 `arm` 아키텍쳐에선 조금 다르다.  
+- `lr` stores the address to return to—the `return address`.  
+- `r0` holds the function's return value, roughly like `rax`.  
+- `pc` holds the address of the next instruction, though it works a little differently in the ARM architecture.  
 
-세 번째 항목에 대해선 다음 글을 참고하면 좋을 것 같다.  
-[대충 스오플 링크](https://stackoverflow.com/questions/24091566/why-does-the-arm-pc-register-point-to-the-instruction-after-the-next-one-to-be-e)
+For the third point, this Stack Overflow post may help:  
+[A Stack Overflow explanation](https://stackoverflow.com/questions/24091566/why-does-the-arm-pc-register-point-to-the-instruction-after-the-next-one-to-be-e)
 
-### 넣어야 할 정확한 값
-`key1()`은 `0x00008ce4`, `key2()`는 `0x00008d0c`, `key3()`는 `0x00008d80`이다.
-이러한 이유도 위에 첨부한 스오플 링크 보고 오면 이해가 된다. 암튼 ㅅㄱ,  
+### The Exact Values to Enter
+`key1()` is `0x00008ce4`, `key2()` is `0x00008d0c`, and `key3()` is `0x00008d80. The Stack Overflow post above explains why. Anyway, that's about it.  
 
-생각보다 복습이 잘 되는 문제였다고 생각한다.
+This turned out to be a better review exercise than I expected.
 
-아, 그리고 나의 경우
+Umm, and this is how I solved it:
 ```py
 python3 -c "a='0x00008ce4';b='0x00008d0c';c='0x00008d80';a=int(a,16);b=int(b,16);c=int(c,16);print(a+b+c)"
 108400
 ```
 
-이렇게 풀었다. 생각 나는 대로 적는 기분파라서..
+me tend to write things down as they come to mind be like:  
+<a href="https://ibb.co/pv22DkNM"><img src="https://i.ibb.co/4ZWWy0CX/memeforpost.webp" alt="memeforpost" border="0"></a>
