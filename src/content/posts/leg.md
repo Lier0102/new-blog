@@ -78,7 +78,7 @@ For the third point, this Stack Overflow post may help:
 [A Stack Overflow explanation](https://stackoverflow.com/questions/24091566/why-does-the-arm-pc-register-point-to-the-instruction-after-the-next-one-to-be-e)
 
 ### The Exact Values to Enter
-`key1()` is `0x00008ce4`, `key2()` is `0x00008d0c`, and `key3()` is `0x00008d80. The Stack Overflow post above explains why. Anyway, that's about it.  
+`key1()` is `0x00008ce4`, `key2()` is `0x00008d0c`, and `key3()` is `0x00008d80`. The Stack Overflow post above explains why. Anyway, that's about it.  
 
 This turned out to be a better review exercise than I expected.
 
