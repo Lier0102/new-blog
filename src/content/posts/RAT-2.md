@@ -1,5 +1,5 @@
 ---
-title: "[RAT] 할아버지 할머니도 춤을 춰요~"
+title: "[RAT] Even Grandma and Grandpa are dancing~"
 published: 2026-11-17
 description: I love playing with a RAT
 category: Viruses
@@ -7,22 +7,22 @@ tags: [RAT]
 draft: false
 ---
 
-# 지난 며칠 간..
-무언가를 했지만 글을 올릴 시간이 아까웠다. 그래서 지금 딱 적기인 상황.  
-만들고 나서 생각했다. 대체 어떻게 지속성을 만족할 수 있는 걸까.  
-왜 이 프로그램을 오인하고 잘못 설치하여 바이러스에 걸릴까.  
+# The last few days...
+I've been working on this, but I didn't want to spend that time writing a post. Now feels like a good time to catch up.  
+Once I'd built it, I got to wondering: how would it stick around?  
+And why would someone mistake it for something else and install it in the first place?  
 
-등, 설치부터 사용까지 사용자는 의심이 없어야 하는, 지루한 속성, 그런 쪽을 만족해야 한다고  
-믿는다. 그런데 내 이 굳건(?)한 믿음과 달리 따라주지 않는 능력.  
+I figured the whole experience, from installation to everyday use, would have to be boring enough that nobody would give it a second thought.  
+I'm pretty sure of that. Less sure I've got the skills to pull it off.  
 
-결국 가장 큰 문제는 위장이었다. 무엇으로 속일 것인지.  
-맥락이 너무 뒤바꼈다. 그것도 많이. 진짜 혼란스럽다.  
+In the end, the hardest part was the disguise. What was this thing supposed to look like?  
+That's a long way from where I started. I've honestly lost the thread a bit.  
 
-코드는 아무래도 공개가 어렵다. 그렇지만, 내가 무엇을 겪었는지 상세하게 적겠다.  
-그래야 보는 사람들한테 조금이라도 도움이 되지 않겠음?  
+I don't think I can share the code, but I do want to write down what I ran into.  
+Might as well make this useful to somebody, right?  
 
-# 2일차  
-이 때는 구조가 짜인 뒤라, 약간 생각하다가 구현을 시작했다.  
+# Day 2  
+By then I had the structure sketched out. I thought it over a bit and started writing code.  
 C2 Server 역할을 하는 부분은 `Python`으로,  
 기능 구현은(임플란트) C, ObjC로 기본 루프짜고,  
 드로퍼/로더 등등, 이런 계획이 있었다면,  
@@ -60,7 +60,7 @@ TLS를 포함한 `http.server`, 작업 큐, 정도.
 날 것의, `cli` 바이너리는 그 위 부모의 `TCC`를 물려받는데, 이 뜻은 밀입국을 하면 된다, 그 얘기이다.  
 그래서 나는 .app 번들을 만들고, .plist를 넣어주면 될 거라고 생각했다.  
 
-스샷뿐만 아니라 키로깅도 그렇다, 계속 TCC. TCC. tCc??!?!?!?  
+Screenshots, keystrokes... whatever I looked at, there it was again. TCC. TCC. tCc??!?!?!?  
 
 또 이 키로거는 시작 시 실행되어야 하는 지속성이 무엇보다 중요해서, `LaunchAgent`한테도 넣어야 한다.  
 어떻게???? 일단 방법은 아래와 같이 생각해봤다.  
@@ -81,9 +81,9 @@ RAT이 가져가는 거지. 이런 식이면 키체인이고 뭐고 다 딸 수 
 
 다행히 클립보드 쪽은 TCC가 필요 없었는데, 아니 15.4부터는 백그라운드에서 돌아가는 모든 애들이 확인을 요구함.  
 
-이렇게 머리를 싸매다 하루가 또 끝났다. 사실 이거 말고 현생도 살아야 했음.  
+And there went another day of scratching my head. I did have a life outside this thing, too.  
 
-# 3일차
+# Day 3
 그럼 백신이나 분석하는 애들, 에게서 자유로워 지려면 뭘 해야 할까.  
 간단하게 `ptrace`, `sysctl`, 등을 활용해 디버깅 당하는 지 볼 수 있을 것 같고,  
 `sysctl`로 `VM` 보고 확인도 가능하고  
@@ -100,4 +100,4 @@ GET /api/v1/task/<id>/file - 유출된 거 다운
 POST /api/v1/upload/<id> - 임플란트에게 보내는 역할
 ```
 
-이렇게 3일도 마무리... 난관이 많았습니다.
+And that's day three. A lot of things to get stuck on...

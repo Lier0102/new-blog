@@ -8,48 +8,48 @@ draft: false
 ---
 
 # Bitmap Sort
-비트맵 정렬이라는 게 있다.  
+Here's how bitmap sort works.  
 <a href="https://ibb.co/qf08HWC"><img src="https://i.ibb.co/YMDS5yX/Screenshot-2026-10-18-at-6-01-55-PM.png" alt="Screenshot-2026-10-18-at-6-01-55-PM" border="0"></a>
 
-원리는 간단하다. 배열 안에 숫자 몇 개 넣고 정렬해달라고 하면,  
-원소를 확인하고 해당 원소의 비트를 켠다.  
-그리고 비트를 켠 원소들을 출력하면 정렬된 결과를 얻을 수 있다.  
+Say I have an array of numbers I want to sort.  
+I go through the array and set the bit that corresponds to each number.  
+Then I scan the bits in index order and print the index of each set bit. That gives me the numbers in sorted order.  
 
-개인적으로 이번에 정리하면서 놓고 있던 형변환 감각을 다시 살펴 보았다.  
-아무 생각 없이 `uint` 안 쓰고 `int` 쓰는 것부터,,  
-너무 둔해졌다.  
+Writing this up got me thinking about type conversions again.  
+I caught myself reaching for `int` instead of `uint` without even thinking.  
+I'm rusty.  
 
-## 구현
-대강 문제 상황을 정의하고 시작하자.  
+## Implementation
+Let me start by laying out the problem.  
 
-> [0, maxval) 범위의 "서로 다른" 정수 n개를 비트 벡터 하나로 정렬한다.
+> Sort n "distinct" integers in the range [0, maxval) using a single bit vector.
 
-문제는 `programming pearls`에 나오는 내용이다.  
-난 그냥 필요한 기능 몇 개만 구현했고, 매크로 같은 부분은 이미 준비되어 있었다.  
+The problem comes from `programming pearls`.  
+The macros and the rest of the setup were already there. I just had to implement a few functions.  
 
 ```c
 /*
- * Column 1 · 문제 1 — 비트맵 정렬 (Bitmap Sort)                    [문제]
+ * Column 1 · Problem 1 — Bitmap Sort                              [Problem]
  *
- * [0, maxval) 범위의 "서로 다른" 정수 n개를 비트 벡터 하나로 정렬한다.
- *   1) set_bit / clr_bit / test_bit : 시프트·마스크로 i번째 비트 조작
- *   2) bitmap_sort                  : 비트 벡터를 이용한 O(n + maxval) 정렬
+ * Sort n "distinct" integers in the range [0, maxval) using a single bit vector.
+ *   1) set_bit / clr_bit / test_bit : Manipulate bit i using shifts and masks
+ *   2) bitmap_sort                  : Sort in O(n + maxval) time using a bit vector
  *
- * 실행: ./run.sh 01-cracking-the-oyster/problems/p1_bitmap_sort.c
+ * Run: ./run.sh 01-cracking-the-oyster/problems/p1_bitmap_sort.c
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 
-/* ---- 간단한 테스트 도구 (수정하지 마세요) ---- */
+/* ---- Simple test harness (do not modify) ---- */
 static int g_fail = 0, g_total = 0;
 #define CHECK(cond) do { g_total++; if (!(cond) && g_fail++ < 10) \
     printf("  [FAIL] %s:%d: %s\n", __FILE__, __LINE__, #cond); } while (0)
 static int report(void)
 {
-    if (g_fail) printf("  결과: %d/%d 실패\n", g_fail, g_total);
-    else        printf("  결과: %d개 검사 모두 통과\n", g_total);
+    if (g_fail) printf("  Result: %d/%d checks failed\n", g_fail, g_total);
+    else        printf("  Result: all %d checks passed\n", g_total);
     return g_fail != 0;
 }
 
@@ -57,31 +57,31 @@ static int report(void)
 #define SHIFT 5      /* 32 = 2^5 */
 #define MASK  0x1F   /* i % 32 == i & 0x1F */
 
-/* a의 i번째 비트를 1로 만든다 */
+/* Set bit i of a to 1 */
 void set_bit(uint32_t *a, int i)
 {
     a[i>>SHIFT] |= (1U << (i & MASK));
-    /* TODO: 여기를 구현하세요 */
+    /* TODO: Implement this here */
     (void)a; (void)i;
 }
 
-/* a의 i번째 비트를 0으로 만든다 */
+/* Set bit i of a to 0 */
 void clr_bit(uint32_t *a, int i)
 {
     a[i>>SHIFT] &= ~(1U << (i & MASK));
-    /* TODO: 여기를 구현하세요 */
+    /* TODO: Implement this here */
     (void)a; (void)i;
 }
 
-/* a의 i번째 비트가 1이면 1, 아니면 0 */
+/* Return 1 if bit i of a is set, otherwise 0 */
 int test_bit(const uint32_t *a, int i)
 {
     return (a[i>>SHIFT] & (1U << (i & MASK))) ? 1 : 0;
-    /* TODO: 여기를 구현하세요 */
+    /* TODO: Implement this here */
     (void)a; (void)i; return 0;
 }
 
-/* x[0..n-1]: [0, maxval) 범위의 서로 다른 정수. x를 오름차순으로 덮어쓴다. */
+/* x[0..n-1]: distinct integers in the range [0, maxval). Overwrite x with the values in ascending order. */
 void bitmap_sort(int *x, int n, int maxval)
 {
     int idx = 0;
@@ -102,7 +102,7 @@ void bitmap_sort(int *x, int n, int maxval)
 
     free(bits);
 
-    /* TODO: 여기를 구현하세요 */
+    /* TODO: Implement this here */
     (void)x; (void)n; (void)maxval;
 }
 
@@ -124,7 +124,7 @@ int main(void)
 
     int maxval = 1000000, n = 50000;
     int *x = malloc(sizeof(int) * n), *y = malloc(sizeof(int) * n);
-    for (int i = 0; i < n; i++)            /* 7919는 소수 → 서로 다른 값 보장 */
+    for (int i = 0; i < n; i++)            /* 7919 is prime → the values here are distinct */
         x[i] = (int)((long long)i * 7919 % maxval);
     memcpy(y, x, sizeof(int) * n);
     qsort(y, n, sizeof(int), cmp_int);
@@ -141,15 +141,15 @@ int main(void)
 }
 ```
 
-**결과**
+**Result**
 ```bash
 ▶ 01-cracking-the-oyster/problems/p1_bitmap_sort.c
-  결과: 6개 검사 모두 통과
+  Result: all 6 checks passed
 ```
 
-`set_bit()`, `clr_bit()`, `test_bit()`, `bitmap_sort()`를 구현했음.  
+I implemented `set_bit()`, `clr_bit()`, `test_bit()`, and `bitmap_sort()`.  
 
-완벽하진 않다. 그리고 수정할 예정이다.  
-지역 변수로 만드려다 혹시나 하는 마음에 찾아봤을 때 메모리 문제로 `calloc` 쓰는 게 맞다고 뒤늦게 알아챘다.  
-불편해서 채점 스크립트 / 문제 / 답지 등 구조화하여 문제 폴더 / 개념 폴더를 사용하고 있다.
+It's not perfect, and I plan to revisit it.  
+I was going to use a local array, but I looked it up just to be safe. That's when I realized I should use `calloc` instead because the array could take up too much stack space.  
+The old setup was awkward to work with, so I organized the grading scripts, problems, and answer keys. I now keep the problems and concepts in separate folders.
 <a href="https://ibb.co/0Rp6gdcT"><img src="https://i.ibb.co/4nwX657z/Screenshot-2026-10-18-at-6-11-20-PM.png" alt="Screenshot-2026-10-18-at-6-11-20-PM" border="0"></a>

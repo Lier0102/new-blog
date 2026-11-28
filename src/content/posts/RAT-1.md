@@ -1,5 +1,5 @@
 ---
-title: "[RAT] 밥은 먹고 다니냐?"
+title: "[RAT] Been eating okay?"
 published: 2026-11-12
 description: I love playing with a RAT
 category: Viruses
@@ -7,34 +7,34 @@ tags: [RAT]
 draft: false
 ---
 
-오랜만에 정돈되지 않은 글을 올려본다. 복귀 겸. 그리고 조만간 시간내서 구조 정리할 예정이다.  
-그러니 만드는 데 참고하고 싶다면 얼마든지 참고해도 좋다.
+It's been a while. Here's a slightly messy post to get me back into writing. I'll make time to write up the structure properly soon.  
+In the meantime, feel free to use these notes as a reference.
 
 # RAT?
-RAT이란?
-원격 액세스 트로이 목마 (RAT - Remote Access Trojan) 를 의미한다.  
-> 기능: 웹캠 훔쳐보기, 키보드 입력록(Keylogger) 탈취, 파일 유출 및 시스템 조작 등을 수행합니다.  
+What's a RAT?
+RAT is short for Remote Access Trojan.  
+> A RAT can spy on people through their webcams, record keystrokes, steal files, and take control of a system.  
 
-가장 유명한 예시로는 **njRAT**이 있다. 아주 유명하다, 모르는 사람을 찾기 더 힘들 정도.  
-추억을 새록 새록 떠올렸다. 특히 디스코드와 관련된 부분에서,,  
+The one everybody knows is **njRAT**. It's probably harder to find someone who hasn't heard of it.  
+That brings back memories. Especially the Discord part...  
 
-그래서 앞으로 100일동안 이거나 만들어보겠다, 정했다.  
-macOS에서 돌아가게 하는 건 특히 시도해 본 적 없는 쪽이었고, 난이도가 높다고 들었기 때문이다.  
+So that's my project for the next hundred days. There, I've decided.  
+I'd never tried anything like this on macOS, and I'd heard it was hard. That's why I picked it.  
 
-여기서부터, 나오는 내용은 전부, 교육용이다. 난 책임을 지지 않는다.  
-그럼 시작하겠다.  
+Everything from here on out is for educational purposes. I'm not taking responsibility for what anyone does with it.  
+Here goes.  
 
-# 질문  
-이거 백퍼 지루해서 그만둘텐데 어케 계속함 -> AI 쓰면 됨  
-AI 어케 씀 -> 잘 쓰면 됨  
+# Questions  
+I'm absolutely going to get bored and quit. How do I keep going? → Use AI.  
+How do I use AI? → Use it well.  
 
-## 아키텍처 및 기술 스택
+## Architecture and tech stack
 TCC 권한, SIP 우회, 여러가지가 있고, M시리즈 칩, intel 칩이 있다.  
-Objective-C/C, 또는 Swift를 생각했다.  
+I considered Objective-C/C and Swift.  
 
-내가 M시리즈 쓰니까 이걸로 만들어야지~  
+I'm on an M-series Mac, so that settles that one.  
 SIP 우회를 굳이?  
-Swift는 내가 모름, 써본 적 자체가 없음. 걍 넘어감.  
+Swift? I've never written a line of it. Moving on.  
 결론은 TCC 권한, 그리고 일단 실행시켜보는 것이 목표였기에 ObjC/C로 개발을 시작했다.  
 평소에 파이썬으로 손코딩을 자주 해서, (그냥 익숙해짐) 어떻게 넣을까 고민하다 기능에 넣기로 했다.  
 
@@ -52,7 +52,7 @@ Swift는 내가 모름, 써본 적 자체가 없음. 걍 넘어감.
 
 코드싸인? 만으로 될 리가 없다. 게이트키퍼가 검열해버림.  
 
-위 문제를 어떻게 해결했다고 가정하고 시작했다. 너무 급했다고 생각한다.  
+I started out assuming I'd somehow solved all that. In hindsight, I got ahead of myself.  
 
 C2 서버, Python3로 구현하고, HTTPS + fallback DNS다.  
 역할은 대기 타고, 작업 큐로 넣고, 저장내용 내보내는 거, 딱 그 정도?  
@@ -81,11 +81,11 @@ macrat/
 └── README.md            # build + op notes
 ```
 
-오늘은 여기서 끝, 정리보단 만드는 게 더 재밌다. 내일 돌아와서 마저 씀
+That's it for today. Building this is more fun than writing it up. I'll come back tomorrow and finish the post.
 
-## 코어 기능
+## Core features
 
-## 페이로드/모듈
+## Payloads and modules
 
 ## AV Bypass & Obfuscation
 

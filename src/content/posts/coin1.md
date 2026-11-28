@@ -8,13 +8,13 @@ draft: false
 ---
 
 # [pwnable.kr] coin1
-뒤늦게 복귀했다.  
-연휴동안 놀았다, 모바일/PC겜보다 PS4 같이 콘솔로 돌리는 게임이 재밌는 것 같다.  
+Took me a while, but I'm back.  
+I spent the holiday playing games. I think I have more fun playing on a console like the PS4 than on my phone or PC.  
 
-이번에 푼 문제의 주제는 **자동화** 로 보인다.  
-연결한 뒤 문제 풀고, 문제 풀고, 또 풀고 ... 100개의 간단한 질문에 대답하면 된다.  
+This challenge seems to be about **automation**.  
+You connect, solve a puzzle, then another, then another... 100 simple questions in all.  
 
-규칙은 아래를 참고하면 된다.  
+Here are the rules:  
 ```bash
 
         ---------------------------------------------------
@@ -49,15 +49,14 @@ draft: false
         
 ```
 
-여러 개의 동전이 주어지는데, 이 동전 중 홀로 다른 면을 가리키는 친구를 찾으면 된다.  
-위 예시로 보아 이진 탐색이 적합하다는 것을 알 수 있다.  
+You get a bunch of coins, and you have to find the odd one out.  
+The example gives you a hint: binary search is a good fit here.  
 
-**[GeeksForGeeks - 이진 탐색](https://www.geeksforgeeks.org/dsa/binary-search/)**  
+**[GeeksForGeeks - Binary Search](https://www.geeksforgeeks.org/dsa/binary-search/)**  
 
-풀이는 아래와 같다. 그런데 이상하게..  
-`pwntools`로 구현했을 때는 중간에 입력이 깨지는 얼토당토 않는 상황이 있었다.  
+Here's my solution. The weird thing is, when I tried it with `pwntools`, the input would get garbled halfway through.  
 
-여러번 이 상황을 겪으니 멘탈이 무너져 socket으로 해결했다.  
+After that happened a few times, I got fed up and switched to sockets.  
 
 ```python
 #!/usr/bin/env python3
@@ -135,4 +134,4 @@ if __name__ == "__main__":
 ```
 
 ### tmi)
-라스트 오브 어스 리마스터판을 해봤다, 기대한 것보다 엄청 재밌어서 얼른 하고 싶다.
+I tried The Last of Us Remastered. It was way more fun than I expected, and I can't wait to get back to it.
